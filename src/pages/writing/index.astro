@@ -17,9 +17,9 @@ const latest = posts[0];
     <p class="page-dek">Essays and notes. RSS at <a href="/rss.xml">/rss.xml</a>.</p>
 
     {posts.length === 0 ? (
-      <p class="empty-state">Writing soon.</p>
+      <p class="empty-state" id="writing-empty">Writing soon.</p>
     ) : (
-      <ul class="writing-list">
+      <ul class="writing-list" id="writing-list" data-api-url="/api/writing">
         {posts.map((post) => {
           const ed = editionLabel(post.data);
           return (
@@ -43,33 +43,81 @@ const latest = posts[0];
   </div>
 </Base>
 
-<style>
-  .writing-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+
+<script>
+  function formatDateUTC(iso) {
+    try {
+      return new Date(iso).toLocaleDateString('en-US', {
+        year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC',
+      });
+    } catch { return iso; }
   }
-  .writing-list li + li {
-    border-top: 1px solid var(--hairline);
+  function escapeHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
-  .writing-link {
-    display: grid;
-    gap: 0.35rem;
-    padding: 1.15rem 0;
-    text-decoration: none;
+  async function overlayApiWriting() {
+    const list = document.getElementById('writing-list');
+    const empty = document.getElementById('writing-empty');
+    const url = (list && list.getAttribute('data-api-url')) || '/api/writing';
+    let posts = [];
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!Array.isArray(data) || !data.length) return;
+      posts = data;
+    } catch { return; }
+
+    // Merge: API posts win by slug; keep static-only posts not in API
+    const bySlug = new Map();
+    if (list) {
+      list.querySelectorAll('a.writing-link').forEach((a) => {
+        const href = a.getAttribute('href') || '';
+        const m = href.match(/\/writing\/([^/]+)\//);
+        if (m) bySlug.set(m[1], a.closest('li'));
+      });
+    }
+    const apiSlugs = new Set(posts.map((p) => p.slug));
+    // Rebuild list from API (canonical live source) when API has data
+    let ul = list;
+    const root = document.querySelector('.page');
+    if (!ul && root) {
+      if (empty) empty.remove();
+      ul = document.createElement('ul');
+      ul.className = 'writing-list';
+      ul.id = 'writing-list';
+      ul.setAttribute('data-api-url', '/api/writing');
+      root.appendChild(ul);
+    }
+    if (!ul) return;
+    if (empty) empty.remove();
+    const parts = [];
+    for (const post of posts) {
+      const slug = post.slug;
+      const title = escapeHtml(String(post.title || slug).replace(/^#+\s*/, ''));
+      const dek = post.summary ? '<span class="writing-dek">' + escapeHtml(post.summary) + '</span>' : '';
+      const date = escapeHtml(formatDateUTC(post.date || ''));
+      parts.push(
+        '<li><a class="writing-link" href="/writing/' + encodeURIComponent(slug) + '/">' +
+        '<span class="writing-title">' + title + '</span>' + dek +
+        '<span class="meta"><time datetime="' + escapeHtml(post.date || '') + '">' + date + '</time></span>' +
+        '</a></li>'
+      );
+    }
+    // Keep static-only essays not yet in KV
+    if (list) {
+      list.querySelectorAll('li').forEach((li) => {
+        const a = li.querySelector('a.writing-link');
+        const href = (a && a.getAttribute('href')) || '';
+        const m = href.match(/\/writing\/([^/]+)\//);
+        if (m && !apiSlugs.has(m[1])) {
+          parts.push(li.outerHTML);
+        }
+      });
+    }
+    ul.innerHTML = parts.join('');
   }
-  .writing-link:hover .writing-title {
-    color: var(--accent-b);
-  }
-  .writing-title {
-    overflow-wrap: anywhere;
-    word-break: break-word;
-    font-size: 1.15rem;
-    font-weight: 550;
-    letter-spacing: -0.015em;
-  }
-  .writing-dek {
-    color: var(--text-muted);
-    font-size: 0.95rem;
-  }
-</style>
+  overlayApiWriting();
+</script>
