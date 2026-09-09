@@ -87,7 +87,5 @@ Public GETs — paste into Drafts Actions:
 | Script | Input | Effect |
 |--------|-------|--------|
 | `docs/drafts-api-import.js` | paste slug or YYYYMMDDHHMMSS (14 digits → Signal; else Writing) | fills body; meta set |
-| `docs/drafts-api-import-writing.js` | Prompt for slug (prefills meta/`[[slug]]`) | fills body; meta=slug |
-| `docs/drafts-api-import-signal.js` | Prompt for YYYYMMDDHHMMSS (prefills meta/`[[id]]`) | fills body; meta=id |
 
 Then publish with `action=update` via `drafts-api-writing.js` / `drafts-api-signal.js`, or **safe-delete** via `drafts-api-delete.js` (paste key → infer type → `DELETE <key>` → `/api/delete`).
