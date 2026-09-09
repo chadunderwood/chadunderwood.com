@@ -36,15 +36,29 @@ read that Credential and send both Bearer + `body.secret`.
 
 ## API contract
 
-`POST https://chadunderwood.com/api/publish`
+### Publish / update — `POST https://chadunderwood.com/api/publish`
 
 - Auth: `Authorization: Bearer <secret>` **and/or** JSON `body.secret` (both trimmed; either may match)
 - Body:
   ```json
-  { "type": "writing"|"signal", "action": "create"|"update"|"delete",
+  { "type": "writing"|"signal", "action": "create"|"update",
     "title?:", "slug?:", "body?:", "status?:", "id?:", "secret?:" }
   ```
 - Response: `{ ok, url, id|slug }` or `{ ok:false, error, hint? }`
+- `action: "delete"` is **rejected** — use `/api/delete` instead.
+
+### Safe delete — `POST https://chadunderwood.com/api/delete`
+
+Separate from publish. Requires an exact `confirm` match.
+
+- Auth: same as publish
+- Body:
+  ```json
+  { "type": "writing"|"signal", "slug?": "…", "id?": "…",
+    "confirm": "<exact slug or id>", "secret?": "…" }
+  ```
+- `confirm` **must equal** the `slug` (writing) or `id` (signal). Mismatch → 400 `confirm_required`.
+- Drafts: `docs/drafts-api-delete.js` — meta `writing:<slug>` / `signal:<id>`, body line `DELETE <same-key>`.
 
 Reads (public):
 
@@ -75,4 +89,4 @@ Public GETs — paste into Drafts Actions:
 | `docs/drafts-api-import-writing.js` | slug in `draft.meta` / first line / `[[slug]]` | fills draft title+body; meta=slug |
 | `docs/drafts-api-import-signal.js` | id from `/signal/` mono code in meta / first line / `[[id]]` | fills body; meta=id |
 
-Then publish with `action=update` via `drafts-api-writing.js` / `drafts-api-signal.js`, or delete via `drafts-api-delete.js`.
+Then publish with `action=update` via `drafts-api-writing.js` / `drafts-api-signal.js`, or **safe-delete** via `drafts-api-delete.js` (`DELETE <id>` confirm → `/api/delete`).
