@@ -37,8 +37,19 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   if (type !== 'writing' && type !== 'signal') {
     return json({ ok: false, error: 'type must be writing|signal' }, 400, headers);
   }
-  if (!['create', 'update', 'delete'].includes(action)) {
-    return json({ ok: false, error: 'action must be create|update|delete' }, 400, headers);
+  if (action === 'delete') {
+    return json(
+      {
+        ok: false,
+        error: 'use_delete_endpoint',
+        hint: 'Deletes moved to POST /api/delete with confirm=slug|id. Publish only accepts create|update.',
+      },
+      400,
+      headers,
+    );
+  }
+  if (!['create', 'update'].includes(action)) {
+    return json({ ok: false, error: 'action must be create|update' }, 400, headers);
   }
 
   try {
@@ -65,16 +76,6 @@ async function handleSignal(
   let posts: SignalPost[] = raw ? JSON.parse(raw) : [];
   if (!Array.isArray(posts)) posts = [];
 
-  if (action === 'delete') {
-    const id = String(body.id || '');
-    if (!id) return json({ ok: false, error: 'id required for delete' }, 400, headers);
-    const next = posts.filter((p) => p.id !== id);
-    if (next.length === posts.length) {
-      return json({ ok: false, error: 'Not found' }, 404, headers);
-    }
-    await env.SIGNAL_POSTS.put(SIGNAL_KEY, JSON.stringify(next));
-    return json({ ok: true, id, url: 'https://chadunderwood.com/signal/' }, 200, headers);
-  }
 
   const text = String(body.body || '').trim();
   if (!text) return json({ ok: false, error: 'body required' }, 400, headers);
@@ -114,17 +115,6 @@ async function handleWriting(
   if (!slug && title) slug = slugify(title);
   if (!slug && body.id) slug = slugify(String(body.id));
 
-  if (action === 'delete') {
-    if (!slug) return json({ ok: false, error: 'slug (or id) required for delete' }, 400, headers);
-    const existing = await env.WRITING_POSTS.get(slug);
-    if (!existing) return json({ ok: false, error: 'Not found' }, 404, headers);
-    await env.WRITING_POSTS.delete(slug);
-    return json(
-      { ok: true, slug, url: `https://chadunderwood.com/writing/${slug}/` },
-      200,
-      headers,
-    );
-  }
 
   if (!title && action === 'create') {
     return json({ ok: false, error: 'title required' }, 400, headers);
