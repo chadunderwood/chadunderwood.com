@@ -40,14 +40,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-
-      - name: Install
-        run: npm ci
-
       - name: Build payload from dispatch / inputs
         env:
           EVENT_NAME: ${{ github.event_name }}
