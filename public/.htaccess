@@ -1,0 +1,17 @@
+DirectoryIndex index.html index.htm
+Options -Indexes
+ErrorDocument 404 /404.html
+<IfModule mod_headers.c>
+  <FilesMatch "^(robots\.txt|robots\.php)$">
+    Header set Cache-Control "public, max-age=300, must-revalidate"
+  </FilesMatch>
+</IfModule>
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteRule ^robots\.txt$ /robots.php [L]
+RewriteRule ^guestbook/?$ /signal/ [R=301,L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.html -f
+RewriteRule ^(.*)$ $1.html [L]
+</IfModule>
