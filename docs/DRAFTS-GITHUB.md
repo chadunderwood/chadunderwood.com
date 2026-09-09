@@ -91,3 +91,19 @@ Then watch **Build & deploy** on the resulting push.
 ```
 
 Same slug republishes: bumps `edition`, sets `updated`, keeps original `date`.
+
+## Publish to Signal
+
+Microblog posts go to `src/content/signal/posts.json` (newest prepended).
+
+**Drafts Action name:** `Publish to Signal`
+
+1. **Script** — paste `docs/drafts-signal-publish.js` (set `PUBLISH_SECRET`).
+2. **HTTP POST** — same as Writing:
+   - URL: `https://api.github.com/repos/chadunderwood/chadunderwood.com/dispatches`
+   - Headers: `Authorization: Bearer <PAT>`, `Accept: application/vnd.github+json`, `Content-Type: application/json`
+   - Body: script output (`event_type`: `signal-publish`)
+
+Workflow: `.github/workflows/signal-publish.yml` → commits `posts.json` → Build & deploy.
+
+Synthesize success URL: `https://chadunderwood.com/signal/` (GitHub returns 204).
