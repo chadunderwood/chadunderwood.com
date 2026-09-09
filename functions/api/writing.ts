@@ -36,7 +36,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       ...rest,
       summary: rest.summary || String(body || '').replace(/[#>*_`]/g, '').slice(0, 160),
     }));
-    return json(lean, 200, { ...headers, 'Cache-Control': 'public, max-age: 30' });
+    return json(lean, 200, { ...headers, 'Cache-Control': 'public, max-age=30' });
   } catch {
     return json({ ok: false, error: 'Failed to load writing' }, 500, headers);
   }
