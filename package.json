@@ -1,1 +1,27 @@
-PLACEHOLDER
+{
+  "name": "chad-personal-site",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "node scripts/sync-site-css.mjs && astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "sync-signal": "node scripts/sync-signal-public.mjs",
+    "seed-kv": "node scripts/seed-kv.mjs",
+    "export-kv": "node scripts/export-kv-to-repo.mjs"
+  },
+  "dependencies": {
+    "@astrojs/rss": "^4.0.19",
+    "@astrojs/sitemap": "^3.7.4",
+    "astro": "^7.3.2",
+    "gray-matter": "^4.0.3",
+    "marked": "^18.0.12"
+  },
+  "allowScripts": {
+    "esbuild": true
+  }
+}

@@ -46,3 +46,10 @@ Not a deploy step — live Functions:
 | `PUBLISH_SECRET` | Pages secret **and** Drafts Credential (same value) |
 
 Never commit account IDs, zone IDs, tokens, or secret values.
+
+## Content vs code deploys
+
+Deploying `dist/` updates **code/static assets only**. It must **not** re-seed
+`SIGNAL_POSTS` / `WRITING_POSTS` from git. Live Writing/Signal stay in KV via Drafts.
+
+Do not run `scripts/seed-kv.mjs` as part of deploy. Optional backup: `npm run export-kv`.
