@@ -33,7 +33,6 @@ jobs:
           CLIENT_PAYLOAD: ${{ toJson(github.event.client_payload) }}
           INPUT_BODY: ${{ inputs.body }}
           INPUT_ID: ${{ inputs.id }}
-          DRAFTS_PUBLISH_SECRET: ${{ secrets.DRAFTS_PUBLISH_SECRET }}
         run: |
           node <<'NODE'
           const fs = require('fs');
@@ -42,7 +41,6 @@ jobs:
             payload = JSON.parse(process.env.CLIENT_PAYLOAD || '{}');
           } else {
             payload = {
-              secret: process.env.DRAFTS_PUBLISH_SECRET || '',
               body: process.env.INPUT_BODY,
               id: process.env.INPUT_ID || undefined,
             };
@@ -53,21 +51,14 @@ jobs:
           fs.writeFileSync('drafts-payload.json', JSON.stringify(payload));
           const keys = Object.keys(payload || {});
           const bodyLen = String(payload.body || '').trim().length;
-          const got = String(payload.secret ?? '').trim();
-          const expected = String(process.env.DRAFTS_PUBLISH_SECRET || '').trim();
-          const secretMatches = expected ? got === expected : null;
-          const msg = `signal-payload keys=${keys.join('|') || '(none)'} bodyLen=${bodyLen} hasSecretField=${Object.prototype.hasOwnProperty.call(payload || {}, 'secret')} secretMatches=${secretMatches} secretLen=${got.length} expectedLen=${expected.length}`;
+          const msg = `signal-payload keys=${keys.join('|') || '(none)'} bodyLen=${bodyLen} secretIgnored=true`;
           console.log(msg);
           console.log(`::notice::${msg}`);
-          if (expected && got !== expected) {
-            console.log(`::error::signal-diag secretMatches=false bodyLen=${bodyLen} secretLen=${got.length} expectedLen=${expected.length}`);
-          }
           NODE
 
       - name: Apply signal post
         id: apply
         env:
-          DRAFTS_PUBLISH_SECRET: ${{ secrets.DRAFTS_PUBLISH_SECRET }}
           SITE_URL: https://chadunderwood.com
         run: |
           set -euo pipefail
