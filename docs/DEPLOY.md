@@ -78,7 +78,7 @@ Approved entries live in `src/content/guestbook/approved.json` and are committed
 
 ## Drafts
 
-See `docs/drafts-publish.js` for the Drafts Action script and JSON contract (SPEC §3.2).
+Drafts Actions: see `docs/DRAFTS-GITHUB.md` and `docs/drafts-api-*.js` (Cloudflare Pages publish API).
 
 ## Checklist
 
