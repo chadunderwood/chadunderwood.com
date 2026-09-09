@@ -1,0 +1,16 @@
+[
+  {
+    "title": "Personal site (this one)",
+    "role": "Design & engineering",
+    "year": "2026",
+    "summary": "Astro static site with interactive bio, dock nav, and Drafts → GitHub publish path.",
+    "href": "/colophon"
+  },
+  {
+    "title": "Placeholder project",
+    "role": "Founder / builder",
+    "year": "TBD",
+    "summary": "Case blurbs go here — title, role, one line. No case-study theater required for v1.",
+    "href": null
+  }
+]

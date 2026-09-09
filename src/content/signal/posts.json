@@ -1,0 +1,12 @@
+[
+  {
+    "id": "shipping-staging",
+    "date": "2026-09-08T18:00:00Z",
+    "body": "Personal site staging is up. Dark dock, short posts here, longer writing over there."
+  },
+  {
+    "id": "signal-not-guestbook",
+    "date": "2026-09-08T19:30:00Z",
+    "body": "Signal is my microblog — status notes from me, not a visitor guestbook."
+  }
+]

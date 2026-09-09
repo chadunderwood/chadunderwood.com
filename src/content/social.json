@@ -1,0 +1,30 @@
+[
+  {
+    "id": "x",
+    "label": "X",
+    "href": "https://x.com/chadunderwood"
+  },
+  {
+    "id": "instagram",
+    "label": "Instagram",
+    "href": "https://instagram.com/",
+    "note": "URL TBD"
+  },
+  {
+    "id": "github",
+    "label": "GitHub",
+    "href": "https://github.com/chadunderwood"
+  },
+  {
+    "id": "linkedin",
+    "label": "LinkedIn",
+    "href": "https://linkedin.com/",
+    "note": "URL TBD"
+  },
+  {
+    "id": "bluesky",
+    "label": "Bluesky",
+    "href": "https://bsky.app/",
+    "note": "URL TBD"
+  }
+]

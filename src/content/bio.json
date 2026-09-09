@@ -1,0 +1,101 @@
+{
+  "lead": "Yo — I'm Chad Underwood. I build useful software, write when something sticks, and keep a small corner of the internet that feels like leaving the rest of it. I care about craft, clarity, and the kind of work that ages well. Based somewhere between Nashville and the next idea. Always tinkering. Rarely boring.",
+  "words": [
+    {
+      "id": "useful-software",
+      "trigger": "useful software",
+      "title": "Useful software",
+      "body": "Tools that disappear into the day — Raycast-ish sharpness, Drafts-style capture, quiet automation. I ship products and side projects that remove friction rather than add dashboards.",
+      "href": "/work",
+      "secret": false
+    },
+    {
+      "id": "write",
+      "trigger": "write",
+      "title": "Writing",
+      "body": "Essays land here first. Drafts on the phone → publish → this site. No newsletter modal theater. Just words when there's something worth saying.",
+      "href": "/writing",
+      "secret": false
+    },
+    {
+      "id": "small-corner",
+      "trigger": "small corner",
+      "title": "This site",
+      "body": "Inspired by ped.ro's conversational bio and Benji Taylor's line about leaving the rest of the internet. Dark, calm, dock at the bottom. Built with Astro, hosted as static HTML.",
+      "href": "/colophon",
+      "secret": false
+    },
+    {
+      "id": "craft",
+      "trigger": "craft",
+      "title": "Craft",
+      "body": "Details that compound: typography, timing, the difference between a button that works and one that feels inevitable. Obsessive in the quiet places.",
+      "href": null,
+      "secret": false
+    },
+    {
+      "id": "clarity",
+      "trigger": "clarity",
+      "title": "Clarity",
+      "body": "Say the thing. Cut the hedges. Prefer one sharp sentence over three soft ones. Same for interfaces.",
+      "href": null,
+      "secret": false
+    },
+    {
+      "id": "ages-well",
+      "trigger": "ages well",
+      "title": "Work that ages well",
+      "body": "Fewer trends, more foundations. Prefer boring technology when it wins. Prefer bold bets when the upside is asymmetric.",
+      "href": null,
+      "secret": false
+    },
+    {
+      "id": "nashville",
+      "trigger": "Nashville",
+      "title": "Nashville",
+      "body": "Home base energy — music, humidity, and enough distance from the coasts to think clearly. Exact pin TBD; the vibe isn't.",
+      "href": "/now",
+      "secret": false
+    },
+    {
+      "id": "next-idea",
+      "trigger": "next idea",
+      "title": "The next idea",
+      "body": "Usually arrives mid-walk or mid-shower. Captured in Drafts before it evaporates. Some become products. Some become essays. A few become secrets.",
+      "href": null,
+      "secret": false
+    },
+    {
+      "id": "tinkering",
+      "trigger": "tinkering",
+      "title": "Always tinkering",
+      "body": "Side projects, photo walks, dock icons at 2am. The site itself is a tinkering surface — hotspots, badges, time-of-day light shifts.",
+      "href": "/photos",
+      "secret": false
+    },
+    {
+      "id": "rarely-boring",
+      "trigger": "Rarely boring",
+      "title": "Rarely boring",
+      "body": "Not chaos-for-chaos. Just a bias toward interesting problems, good people, and nights that end with something made.",
+      "href": "/signal",
+      "secret": false
+    },
+    {
+      "id": "leaving",
+      "trigger": "leaving the rest of it",
+      "title": "Leaving the rest of the internet",
+      "body": "Benji Taylor's idea: a personal site should feel like you've briefly left the feed. No engagement bait. No cookie walls. Just a room.",
+      "href": null,
+      "secret": false
+    },
+    {
+      "id": "secret-word",
+      "trigger": "somewhere",
+      "title": "You found it",
+      "body": "Quiet doors for quiet visitors. There's a page that isn't in the sitemap.",
+      "href": "/secret",
+      "secret": true
+    }
+  ]
+}
