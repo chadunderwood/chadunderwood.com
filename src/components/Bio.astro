@@ -1,0 +1,247 @@
+---
+import bio from '../content/bio.json';
+
+type Word = {
+  id: string;
+  trigger: string;
+  title: string;
+  body: string;
+  href?: string | null;
+  secret?: boolean;
+};
+
+const words = bio.words as Word[];
+const publicCount = words.filter((w) => !w.secret).length;
+const totalDiscoverable = words.length;
+
+/** Replace first occurrence of each trigger in lead with hotspot markup placeholders */
+function buildLeadHtml(lead: string, list: Word[]): string {
+  let html = lead;
+  // Sort longer triggers first to avoid partial overlaps
+  const sorted = [...list].sort((a, b) => b.trigger.length - a.trigger.length);
+  for (const w of sorted) {
+    const idx = html.indexOf(w.trigger);
+    if (idx === -1) continue;
+    const before = html.slice(0, idx);
+    const after = html.slice(idx + w.trigger.length);
+    const cls = w.secret ? 'hotspot hotspot--secret' : 'hotspot';
+    const mark = `<button type="button" class="${cls}" data-hotspot-id="${w.id}" data-secret="${w.secret ? '1' : '0'}" aria-expanded="false" aria-controls="panel-${w.id}"><span class="hotspot-text">${w.trigger}</span></button>`;
+    html = before + mark + after;
+  }
+  return html;
+}
+
+const leadHtml = buildLeadHtml(bio.lead, words);
+---
+
+<section class="bio" data-bio data-total={totalDiscoverable} data-public-total={publicCount}>
+  <div class="bio-counter" data-bio-counter aria-live="polite">
+    <span data-bio-count>0</span>/<span>{totalDiscoverable}</span>
+    <span class="sr-only">discoveries</span>
+  </div>
+
+  <p class="bio-lead" set:html={leadHtml} />
+
+  <div class="bio-panels">
+    {words.map((w) => (
+      <div
+        id={`panel-${w.id}`}
+        class="bio-panel"
+        role="dialog"
+        aria-modal="false"
+        aria-labelledby={`panel-title-${w.id}`}
+        hidden
+        data-panel-id={w.id}
+      >
+        <div class="bio-panel-inner">
+          <div class="bio-panel-head">
+            <h2 id={`panel-title-${w.id}`} class="bio-panel-title">{w.title}</h2>
+            <button type="button" class="bio-panel-close" data-panel-close aria-label="Close">×</button>
+          </div>
+          <p class="bio-panel-body">{w.body}</p>
+          {w.href && (
+            <p class="bio-panel-link">
+              <a href={w.href}>{w.secret ? 'Open the quiet door →' : 'Learn more →'}</a>
+            </p>
+          )}
+        </div>
+      </div>
+    ))}
+  </div>
+  <div class="bio-backdrop" data-bio-backdrop hidden></div>
+</section>
+
+<script>
+  import { initBio } from '../scripts/bio';
+  initBio();
+</script>
+
+<style>
+  .bio {
+    position: relative;
+    width: min(720px, calc(100% - 2.5rem));
+    margin: 0 auto;
+    padding: 5.5rem 0 3rem;
+  }
+  .bio-counter {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 40;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    background: var(--bg-elevated);
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .bio-lead {
+    font-size: clamp(1.35rem, 2.6vw, 1.75rem);
+    line-height: 1.55;
+    letter-spacing: -0.02em;
+    font-weight: 450;
+    margin: 0;
+    max-width: 38rem;
+  }
+  .bio-lead :global(.hotspot) {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    padding: 0;
+    cursor: pointer;
+    text-decoration-line: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.18em;
+    border-radius: 2px;
+  }
+  .bio-lead :global(.hotspot:nth-of-type(3n + 1)) {
+    text-decoration-color: color-mix(in srgb, var(--accent-a) 75%, transparent);
+  }
+  .bio-lead :global(.hotspot:nth-of-type(3n + 2)) {
+    text-decoration-color: color-mix(in srgb, var(--accent-b) 75%, transparent);
+  }
+  .bio-lead :global(.hotspot:nth-of-type(3n)) {
+    text-decoration-color: color-mix(in srgb, var(--accent-c) 75%, transparent);
+  }
+  .bio-lead :global(.hotspot:hover),
+  .bio-lead :global(.hotspot:focus-visible) {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .bio-lead :global(.hotspot.is-visited) {
+    text-decoration-style: dotted;
+    opacity: 0.92;
+  }
+  .bio-lead :global(.hotspot--secret) {
+    text-decoration: none;
+    background: transparent;
+  }
+  .bio-lead :global(.hotspot--secret:hover),
+  .bio-lead :global(.hotspot--secret:focus-visible) {
+    text-decoration: underline;
+    text-decoration-color: var(--hairline);
+    text-decoration-thickness: 1px;
+  }
+  .bio-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    background: rgba(0, 0, 0, 0.35);
+  }
+  .bio-panel {
+    position: fixed;
+    z-index: 46;
+    left: 50%;
+    bottom: calc(var(--dock-pad) + 0.5rem);
+    transform: translateX(-50%) translateY(8px);
+    width: min(420px, calc(100% - 1.5rem));
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration) var(--ease), transform var(--duration) var(--ease);
+  }
+  .bio-panel.is-open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+  }
+  .bio-panel[hidden] {
+    display: block !important;
+    visibility: hidden;
+  }
+  .bio-panel.is-open[hidden] {
+    visibility: visible;
+  }
+  .bio-panel-inner {
+    background: var(--bg-elevated);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    padding: 1rem 1.1rem 1.15rem;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  }
+  .bio-panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .bio-panel-title {
+    margin: 0;
+    font-size: 1.05rem;
+    letter-spacing: -0.015em;
+  }
+  .bio-panel-close {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 1.35rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.1rem 0.35rem;
+    border-radius: 6px;
+  }
+  .bio-panel-close:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .bio-panel-body {
+    margin: 0.65rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+  @media (max-width: 640px) {
+    .bio {
+      width: min(720px, calc(100% - 1.5rem));
+      padding: 3.25rem 0 2.5rem;
+    }
+    .bio-lead {
+      font-size: clamp(1.2rem, 5.2vw, 1.45rem);
+      max-width: 100%;
+    }
+    .bio-counter {
+      top: max(0.65rem, env(safe-area-inset-top));
+      right: max(0.65rem, env(safe-area-inset-right));
+      font-size: 0.72rem;
+      padding: 0.28rem 0.55rem;
+    }
+    .bio-panel {
+      width: min(420px, calc(100% - 1rem));
+      bottom: calc(var(--dock-pad) + 0.25rem);
+    }
+  }
+  .bio-panel-link {
+    margin: 0.85rem 0 0;
+    font-size: 0.92rem;
+  }
+  .bio-panel-link a {
+    color: var(--accent-b);
+    text-decoration: none;
+  }
+  .bio-panel-link a:hover {
+    text-decoration: underline;
+  }
+</style>
