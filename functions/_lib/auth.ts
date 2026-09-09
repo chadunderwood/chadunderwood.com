@@ -41,25 +41,37 @@ export async function readJson(request: Request): Promise<Record<string, unknown
   }
 }
 
-export function checkSecret(env: Env, request: Request, body: Record<string, unknown>): boolean {
-  const expected = String(env.PUBLISH_SECRET || '');
-  if (!expected) return false;
-  const auth = request.headers.get('Authorization') || '';
-  let provided = '';
-  if (auth.toLowerCase().startsWith('bearer ')) {
-    provided = auth.slice(7).trim();
-  } else if (typeof body.secret === 'string') {
-    provided = body.secret;
-  }
-  if (!provided || provided.length !== expected.length) {
-    return false;
-  }
+function secretsEqual(expected: string, provided: string): boolean {
+  if (!provided || provided.length !== expected.length) return false;
   let diff = 0;
   for (let i = 0; i < expected.length; i++) {
     diff |= expected.charCodeAt(i) ^ provided.charCodeAt(i);
   }
   return diff === 0;
 }
+
+/** Accept Authorization: Bearer <secret> and/or JSON body.secret (both trimmed). */
+export function checkSecret(env: Env, request: Request, body: Record<string, unknown>): boolean {
+  const expected = String(env.PUBLISH_SECRET || '').trim();
+  if (!expected) return false;
+
+  const candidates: string[] = [];
+  const auth = request.headers.get('Authorization') || '';
+  if (auth.toLowerCase().startsWith('bearer ')) {
+    candidates.push(auth.slice(7).trim());
+  }
+  if (typeof body.secret === 'string') {
+    candidates.push(body.secret.trim());
+  }
+
+  for (const provided of candidates) {
+    if (secretsEqual(expected, provided)) return true;
+  }
+  return false;
+}
+
+export const UNAUTH_HINT =
+  'Send Authorization: Bearer <PUBLISH_SECRET> and/or JSON body.secret — same value as Cloudflare Pages secret PUBLISH_SECRET.';
 
 export function slugify(text: string, max = 80): string {
   return (
