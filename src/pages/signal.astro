@@ -98,16 +98,17 @@ function pageHref(n: number): string {
     padding: 0;
   }
   .signal-list li + li {
-    margin-top: 1.35rem;
+    margin-top: 0;
     padding-top: 0;
     border-top: 0;
   }
-  /* Inset dotted divider — slight padding each side, not edge-to-edge */
+  /* Full-width dotted divider; padding is ABOVE the line (not side inset) */
   .signal-list li + li::before {
     content: '';
     display: block;
-    margin: 0 0.85rem 1.35rem;
+    margin: 1.35rem 0 1.35rem;
     border-top: 1px dotted var(--hairline);
+    width: 100%;
   }
   .signal-body {
     margin: 0 0 0.4rem;
