@@ -1,53 +1,60 @@
-// Drafts Action — Import Writing or Signal into this draft for edit/delete
+// Drafts Action — Import Writing or Signal into this draft for edit
 // HTTP.create only — alert on success/fail; no context.success / context.fail
 //
-// Flow (Prompt):
-//   1) Choose Writing or Signal
-//   2) Enter writing slug OR paste Signal YYYYMMDDHHMMSS (mono code under /signal/)
-//   3) Draft body (+ meta) filled for update / safe-delete
+// Flow:
+//   1) Paste writing slug OR Signal YYYYMMDDHHMMSS (mono code under /signal/)
+//   2) Type is inferred: 14 digits → Signal; otherwise → Writing
+//   3) Draft body (+ meta) filled — republish with drafts-api-writing.js / drafts-api-signal.js (action=update)
 //
 // Auth: none (public GET APIs)
 
 const WRITING_API = 'https://chadunderwood.com/api/writing/';
 const SIGNAL_API = 'https://chadunderwood.com/api/signal';
+const SIGNAL_ID_RE = /^\d{14}$/;
 
-function metaPrefill() {
-  try {
-    const meta = String(draft.meta || '').trim();
-    if (!meta) return '';
-    if (meta.indexOf(':') > 0) return meta.split(':').slice(1).join(':').trim();
-    return meta;
-  } catch (e) {
-    return '';
-  }
+function stripTypePrefix(raw) {
+  let s = String(raw || '').trim();
+  if (/^writing:/i.test(s)) s = s.replace(/^writing:/i, '').trim();
+  else if (/^signal:/i.test(s)) s = s.replace(/^signal:/i, '').trim();
+  return s;
 }
 
-function promptType() {
+function keyHint() {
+  try {
+    const meta = stripTypePrefix(draft.meta || '');
+    if (meta) return meta;
+  } catch (e) {}
+  try {
+    const t = String(draft.processTemplate('[[slug]]') || draft.processTemplate('[[id]]') || '').trim();
+    if (t) return stripTypePrefix(t);
+  } catch (e) {}
+  try {
+    const lines = String(draft.content || '').split('\n');
+    for (let i = 0; i < Math.min(lines.length, 5); i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      const m = line.match(/^\s*(slug|id|code)\s*[:=]\s*(.+)\s*$/i);
+      if (m) return stripTypePrefix(m[2]);
+      if (line.indexOf(' ') < 0 && line.indexOf(':') < 0) return stripTypePrefix(line);
+    }
+  } catch (e) {}
+  return '';
+}
+
+function inferType(key) {
+  return SIGNAL_ID_RE.test(key) ? 'signal' : 'writing';
+}
+
+function promptKey(prefill) {
   const p = Prompt.create();
   p.title = 'Import to edit';
-  p.message = 'What do you want to import?';
-  p.addButton('Writing');
-  p.addButton('Signal');
-  p.isCancellable = true;
-  if (!p.show()) return null;
-  const b = String(p.buttonPressed || '').toLowerCase();
-  if (b.indexOf('writing') === 0) return 'writing';
-  if (b.indexOf('signal') === 0) return 'signal';
-  return null;
-}
-
-function promptKey(type, prefill) {
-  const p = Prompt.create();
-  p.title = type === 'writing' ? 'Import Writing' : 'Import Signal';
   p.message =
-    type === 'writing'
-      ? 'Enter the writing slug (path under /writing/).'
-      : 'Paste the YYYYMMDDHHMMSS mono code shown under the post on /signal/.';
-  p.addTextField('key', type === 'writing' ? 'Slug' : 'Signal id', prefill || '');
+    'Paste a Writing slug (e.g. thoughts-on-the-2026-apple-event)\nor a Signal code YYYYMMDDHHMMSS (14 digits under /signal/).\nType is inferred automatically.';
+  p.addTextField('key', 'Slug or Signal id', prefill || '');
   p.addButton('Import');
   p.isCancellable = true;
   if (!p.show()) return null;
-  return String((p.fieldValues && p.fieldValues.key) || '').trim();
+  return stripTypePrefix((p.fieldValues && p.fieldValues.key) || '');
 }
 
 function importWriting(slug) {
@@ -127,7 +134,7 @@ function importSignal(want) {
         alert('Signal import: loaded OK but could not write draft.\n' + String(e).slice(0, 200));
         return;
       }
-      alert('Imported signal → ' + (found.id || want) + '\nEdit+update or safe-delete using this id.');
+      alert('Imported signal → ' + (found.id || want) + '\nEdit+update with drafts-api-signal.js (action=update).');
     }
   } else {
     alert(
@@ -139,16 +146,16 @@ function importSignal(want) {
   }
 }
 
-const type = promptType();
-if (!type) {
+const keyRaw = promptKey(keyHint());
+if (keyRaw === null) {
   // cancelled
 } else {
-  const key = promptKey(type, metaPrefill());
+  const key = String(keyRaw || '').replace(/^\/+|\/+$/g, '');
   if (!key) {
-    if (key !== null) alert('Import: missing slug/id.');
-  } else if (type === 'writing') {
-    importWriting(key.replace(/^\/+|\/+$/g, ''));
-  } else {
+    alert('Import: paste a writing slug or 14-digit Signal id.');
+  } else if (inferType(key) === 'signal') {
     importSignal(key);
+  } else {
+    importWriting(key);
   }
 }

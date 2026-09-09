@@ -1,10 +1,7 @@
-// Drafts Action — Import Signal from chadunderwood.com into this draft for edit/delete
+// Drafts Action — Import Signal (prefer docs/drafts-api-import.js which auto-infers type)
 // HTTP.create only — alert on success/fail; no context.success / context.fail
 //
-// Flow: Prompt for YYYYMMDDHHMMSS id (prefills draft.meta / [[id]] / first line if present).
-// Prefer docs/drafts-api-import.js for a Writing vs Signal chooser.
-//
-// Auth: none (public GET /api/signal)
+// Paste YYYYMMDDHHMMSS mono code from /signal/. Auth: none (public GET /api/signal)
 
 const API = 'https://chadunderwood.com/api/signal';
 
@@ -12,27 +9,11 @@ function resolveIdHint() {
   let id = '';
   try {
     id = String(draft.meta || '').trim();
-    if (id.indexOf('signal:') === 0) id = id.slice(7).trim();
+    if (/^signal:/i.test(id)) id = id.replace(/^signal:/i, '').trim();
   } catch (e) {}
   if (!id) {
     try {
       id = String(draft.processTemplate('[[id]]') || draft.processTemplate('[[slug]]') || '').trim();
-    } catch (e) {}
-  }
-  if (!id) {
-    try {
-      const lines = String(draft.content || '').split('\n');
-      for (let i = 0; i < Math.min(lines.length, 5); i++) {
-        const m = lines[i].match(/^\s*(id|slug|code)\s*[:=]\s*(.+)\s*$/i);
-        if (m) {
-          id = m[2].trim();
-          break;
-        }
-        if (!id && lines[i].trim() && lines[i].indexOf(' ') < 0 && lines[i].indexOf(':') < 0) {
-          id = lines[i].trim();
-          break;
-        }
-      }
     } catch (e) {}
   }
   return id;
@@ -52,8 +33,10 @@ function promptId(prefill) {
 const want = promptId(resolveIdHint());
 if (want === null) {
   // cancelled
-} else if (!want || want.indexOf('REPLACE_') === 0) {
+} else if (!want) {
   alert('Signal import: paste the YYYYMMDDHHMMSS mono code from /signal/.');
+} else if (!/^\d{14}$/.test(want)) {
+  alert('Signal import: expected 14-digit YYYYMMDDHHMMSS. Use docs/drafts-api-import.js for writing slugs.');
 } else {
   const http = HTTP.create();
   const response = http.request({
@@ -68,22 +51,15 @@ if (want === null) {
   } catch (e) {}
 
   if (code === 200 && Array.isArray(posts)) {
-    const wantLower = want.toLowerCase();
     let found = null;
     for (let i = 0; i < posts.length; i++) {
-      const p = posts[i] || {};
-      const pid = String(p.id || '');
-      if (pid === want || pid.toLowerCase() === wantLower) {
-        found = p;
+      if (String((posts[i] || {}).id || '') === want) {
+        found = posts[i];
         break;
       }
     }
     if (!found) {
-      alert(
-        'Signal import: no post with id "' +
-          want +
-          '". Copy the YYYYMMDDHHMMSS mono code under the post on /signal/.',
-      );
+      alert('Signal import: no post with id "' + want + '".');
     } else {
       try {
         draft.content = String(found.body || '');
@@ -92,7 +68,7 @@ if (want === null) {
       } catch (e) {
         alert('Signal import: loaded OK but could not write draft.\n' + String(e).slice(0, 200));
       }
-      alert('Imported signal → ' + (found.id || want) + '\nEdit+update or safe-delete using this id.');
+      alert('Imported signal → ' + (found.id || want) + '\nEdit+update with drafts-api-signal.js (action=update).');
     }
   } else {
     alert(
