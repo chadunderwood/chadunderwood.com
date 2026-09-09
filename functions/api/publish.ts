@@ -4,6 +4,7 @@ import {
   json,
   readJson,
   slugify,
+  UNAUTH_HINT,
   type Env,
   type SignalPost,
   type WritingPost,
@@ -18,8 +19,16 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const headers = corsHeaders(context.request);
   const body = await readJson(context.request);
 
+  const expectedConfigured = Boolean(String(context.env.PUBLISH_SECRET || '').trim());
+  if (!expectedConfigured) {
+    return json(
+      { ok: false, error: 'server_misconfigured', hint: 'Pages secret PUBLISH_SECRET is not set on this deployment.' },
+      503,
+      headers,
+    );
+  }
   if (!checkSecret(context.env, context.request, body)) {
-    return json({ ok: false, error: 'Unauthorized' }, 401, headers);
+    return json({ ok: false, error: 'unauthorized', hint: UNAUTH_HINT }, 401, headers);
   }
 
   const type = String(body.type || '');
@@ -77,6 +86,7 @@ async function handleSignal(
   const existingIdx = posts.findIndex((p) => p.id === id);
 
   if (action === 'create' && existingIdx >= 0) {
+    // upsert on create if same id
     posts[existingIdx] = { id, date: posts[existingIdx].date || now, body: text };
   } else if (action === 'update') {
     if (existingIdx < 0) return json({ ok: false, error: 'Not found' }, 404, headers);
