@@ -7,7 +7,7 @@ Static Astro site → Hostinger **Custom HTML**. No WordPress. No Node SSR on th
 ```bash
 npm install
 # Leave SITE_URL unset for local/pre-staging so chadunderwood.com is not baked into canonicals.
-SITE_URL=https://deepskyblue-narwhal-191060.hostingersite.com npm run build   # current Hostinger staging
+SITE_URL=https://YOUR-STAGING.hostingersite.com npm run build   # Hostinger staging (unused after CF cutover)
 # SITE_URL=https://chadunderwood.com npm run build   # production cutover later (Gary-approved only)
 ```
 
@@ -68,7 +68,7 @@ jobs:
 
 ## Guestbook moderation
 
-V1 form ships with honeypot + client placeholder. Wire `action` on the guestbook form to:
+v1 form ships with honeypot + client placeholder. Wire `action` on the guestbook form to:
 
 - Formspree / Basin / Getform, **or**
 - Authenticated Worker that opens a GitHub Issue / writes pending JSON, **or**

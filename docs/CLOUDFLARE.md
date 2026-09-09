@@ -8,7 +8,7 @@ Hostinger remains on disk but is unused after DNS cutover.
 
 ```bash
 export CLOUDFLARE_API_TOKEN=…   # never commit
-export CLOUDFLARE_ACCOUNT_ID=25395a6bd9cd24fda57e33c2754bc4d0
+export CLOUDFLARE_ACCOUNT_ID=…   # env / local secrets only — never commit
 SITE_URL=https://chadunderwood.com npm run build
 npx wrangler@latest pages deploy dist --project-name=chadunderwood
 ```
@@ -60,7 +60,7 @@ node scripts/seed-kv.mjs
 
 ## Custom domain
 
-Pages project custom domain `chadunderwood.com` (and `www` if needed). Zone already on Cloudflare (`82d5427d70be7a04fcb33a341c0acb63`). Apex should CNAME-flatten / alias to `chadunderwood.pages.dev` (orange cloud).
+Pages project custom domain `chadunderwood.com` (and `www` if needed). Zone already on Cloudflare (look up **Zone ID** in the dashboard; keep it in env only — never commit). Apex should CNAME-flatten / alias to `chadunderwood.pages.dev` (orange cloud).
 
 ## Git connect (optional later)
 
