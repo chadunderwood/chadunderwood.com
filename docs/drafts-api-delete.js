@@ -5,9 +5,26 @@
 //   type: writing|signal
 //   slug or id: target
 // Or set draft.meta = "writing:my-slug" or "signal:my-id"
+// For Signal: copy the mono id under the post on https://chadunderwood.com/signal/
+// (same value as DELETE JSON body.id).
+//
+// Auth: Drafts Credential name = PUBLISH_SECRET (same as Pages secret PUBLISH_SECRET)
+// Sends Authorization: Bearer + JSON body.secret
 
 const PUBLISH_URL = 'https://chadunderwood.com/api/publish';
-const PUBLISH_SECRET = 'REPLACE_WITH_PUBLISH_SECRET';
+const PUBLISH_SECRET_FALLBACK = 'REPLACE_WITH_PUBLISH_SECRET';
+
+function resolvePublishSecret() {
+  try {
+    const cred = Credential.create('PUBLISH_SECRET', 'Pages publish secret for chadunderwood.com');
+    cred.addPassword('secret', 'PUBLISH_SECRET');
+    if (cred.authorize()) {
+      const v = String(cred.getValue('secret') || '').trim();
+      if (v) return v;
+    }
+  } catch (e) {}
+  return String(PUBLISH_SECRET_FALLBACK || '').trim();
+}
 
 let type = '';
 let key = '';
@@ -31,7 +48,6 @@ if (!type || !key) {
 }
 
 if (!type || !key) {
-  // Parse first lines: type=writing / slug=foo
   try {
     const lines = String(draft.content || '').split('\n');
     for (let i = 0; i < lines.length; i++) {
@@ -46,16 +62,19 @@ if (!type || !key) {
   } catch (e) {}
 }
 
+const PUBLISH_SECRET = resolvePublishSecret();
+
 if (type !== 'writing' && type !== 'signal') {
   alert('Delete: set type to writing or signal (draft.meta like writing:slug).');
 } else if (!key) {
   alert('Delete: missing slug/id.');
 } else if (!PUBLISH_SECRET || PUBLISH_SECRET.indexOf('REPLACE_') === 0) {
-  alert('Delete: set PUBLISH_SECRET.');
+  alert('Delete: set Drafts Credential "PUBLISH_SECRET".');
 } else {
   const requestBody = {
     type: type,
     action: 'delete',
+    secret: PUBLISH_SECRET,
   };
   if (type === 'writing') requestBody.slug = key;
   else requestBody.id = key;
@@ -84,7 +103,10 @@ if (type !== 'writing' && type !== 'signal') {
       'Delete failed HTTP ' +
         code +
         '\n' +
-        String((parsed && parsed.error) || response.responseText || response.responseData || '').slice(0, 300),
+        String((parsed && (parsed.error || parsed.hint)) || response.responseText || response.responseData || '').slice(
+          0,
+          400,
+        ),
     );
   }
 }
