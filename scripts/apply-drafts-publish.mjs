@@ -87,9 +87,15 @@ if (expectedSecret) {
   }
 }
 
-const title = String(payload.title || '').trim() || 'Untitled';
+let title = String(payload.title || '').trim() || 'Untitled';
+// Drafts often sends "# Title" as the title line — strip leading markdown heading markers
+title = title.replace(/^#+\s+/, '').trim() || 'Untitled';
 const slug = slugify(payload.slug || title);
-const body = String(payload.body || '').trim();
+let body = String(payload.body || '').trim();
+// If body empty but title was a full draft, keep empty; if body starts with same heading, strip it
+if (body.startsWith('#')) {
+  body = body.replace(/^#+\s+[^\n]+\n+/, '').trim();
+}
 const status = String(payload.status || 'published').toLowerCase();
 const tags = Array.isArray(payload.tags) ? payload.tags.map(String) : [];
 const shouldUpdate = payload.updated !== false;
