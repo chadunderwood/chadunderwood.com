@@ -47,7 +47,14 @@ jobs:
               id: process.env.INPUT_ID || undefined,
             };
           }
+          if (payload && payload.data && typeof payload.data === 'object' && !payload.body) {
+            payload = { ...payload, ...payload.data };
+          }
           fs.writeFileSync('drafts-payload.json', JSON.stringify(payload));
+          const keys = Object.keys(payload || {});
+          console.log('payload keys:', keys.join(', ') || '(none)');
+          console.log('body length:', String(payload.body || '').length);
+          console.log('has secret field:', Object.prototype.hasOwnProperty.call(payload || {}, 'secret'));
           NODE
 
       - name: Apply signal post

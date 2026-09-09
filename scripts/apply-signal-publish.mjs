@@ -27,17 +27,39 @@ function loadPayload() {
 }
 
 const payload = loadPayload();
+const keys = payload && typeof payload === 'object' ? Object.keys(payload) : [];
+const bodyRaw = payload?.body;
+const body = String(bodyRaw ?? '').trim();
+const hasSecretField = payload != null && Object.prototype.hasOwnProperty.call(payload, 'secret');
+const gotSecret = String(payload?.secret ?? '');
 const expectedSecret = process.env.DRAFTS_PUBLISH_SECRET || '';
+
+console.error(
+  JSON.stringify({
+    diag: 'signal-publish',
+    keys,
+    hasSecretField,
+    secretNonEmpty: gotSecret.length > 0,
+    expectedSecretConfigured: expectedSecret.length > 0,
+    secretMatches: expectedSecret ? gotSecret === expectedSecret : null,
+    bodyType: bodyRaw === undefined ? 'missing' : typeof bodyRaw,
+    bodyLen: body.length,
+  }),
+);
+
 if (expectedSecret) {
-  if ((payload.secret || '') !== expectedSecret) {
-    console.error('Invalid publish secret');
+  if (gotSecret !== expectedSecret) {
+    console.error(
+      'Invalid publish secret — client_payload.secret must equal Actions secret DRAFTS_PUBLISH_SECRET (same as Writing Action).',
+    );
     process.exit(1);
   }
 }
 
-const body = String(payload.body || '').trim();
 if (!body) {
-  console.error('Signal body is empty');
+  console.error(
+    'Signal body is empty — HTTP.create must send client_payload.body as the draft text (string).',
+  );
   process.exit(1);
 }
 
