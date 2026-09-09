@@ -91,7 +91,7 @@ function pageHref(n: number): string {
   </div>
 </Base>
 
-<style>
+<style is:global>
   .signal-list {
     list-style: none;
     margin: 1.5rem 0 0;
@@ -102,13 +102,15 @@ function pageHref(n: number): string {
     padding-top: 0;
     border-top: 0;
   }
-  /* Full-width dotted divider; padding is ABOVE the line (not side inset) */
+  /* Padding ABOVE the dotted line; full width (no side inset). Global so client-rendered lis keep styles. */
   .signal-list li + li::before {
     content: '';
     display: block;
-    margin: 1.35rem 0 1.35rem;
-    border-top: 1px dotted var(--hairline);
+    box-sizing: border-box;
     width: 100%;
+    padding-top: 1.35rem;
+    border-bottom: 1px dotted var(--hairline);
+    margin: 0 0 1.35rem;
   }
   .signal-body {
     margin: 0 0 0.4rem;
@@ -118,22 +120,22 @@ function pageHref(n: number): string {
     overflow-wrap: anywhere;
     word-break: break-word;
   }
-  .signal-body :global(p) {
+  .signal-body p {
     margin: 0 0 0.6em;
   }
-  .signal-body :global(p:last-child) {
+  .signal-body p:last-child {
     margin-bottom: 0;
   }
-  .signal-body :global(h1),
-  .signal-body :global(h2),
-  .signal-body :global(h3) {
+  .signal-body h1,
+  .signal-body h2,
+  .signal-body h3 {
     font-size: 1.1rem;
     margin: 0.8em 0 0.35em;
     line-height: 1.3;
   }
-  .signal-body :global(h1:first-child),
-  .signal-body :global(h2:first-child),
-  .signal-body :global(h3:first-child) {
+  .signal-body h1:first-child,
+  .signal-body h2:first-child,
+  .signal-body h3:first-child {
     margin-top: 0;
   }
   .signal-pager {
@@ -143,7 +145,6 @@ function pageHref(n: number): string {
     justify-content: space-between;
     gap: 0.75rem 1rem;
     margin: 1.75rem 0 0;
-    padding: 0 0.85rem;
     font-size: 0.92rem;
   }
   .signal-pager-status {
@@ -163,9 +164,6 @@ function pageHref(n: number): string {
     opacity: 0.4;
     pointer-events: none;
   }
-</style>
-
-<style is:global>
   .signal-meta {
     display: flex;
     flex-wrap: wrap;
@@ -197,6 +195,8 @@ function pageHref(n: number): string {
     color: var(--accent-b);
   }
 </style>
+
+
 
 <script>
   import { marked } from 'marked';
