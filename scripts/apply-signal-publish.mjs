@@ -37,9 +37,11 @@ const keys = payload && typeof payload === 'object' ? Object.keys(payload) : [];
 const bodyRaw = payload?.body;
 const body = String(bodyRaw ?? '').trim();
 const hasSecretField = payload != null && Object.prototype.hasOwnProperty.call(payload, 'secret');
-const gotSecret = String(payload?.secret ?? '');
-const expectedSecret = process.env.DRAFTS_PUBLISH_SECRET || '';
+const gotSecret = String(payload?.secret ?? '').trim();
+const expectedSecret = String(process.env.DRAFTS_PUBLISH_SECRET || '').trim();
 const secretMatches = expectedSecret ? gotSecret === expectedSecret : null;
+const secretLen = gotSecret.length;
+const expectedLen = expectedSecret.length;
 
 const diag = {
   diag: 'signal-publish',
@@ -48,6 +50,8 @@ const diag = {
   secretNonEmpty: gotSecret.length > 0,
   expectedSecretConfigured: expectedSecret.length > 0,
   secretMatches,
+  secretLen,
+  expectedLen,
   bodyType: bodyRaw === undefined ? 'missing' : typeof bodyRaw,
   bodyLen: body.length,
 };
@@ -57,7 +61,7 @@ if (expectedSecret) {
   if (gotSecret !== expectedSecret) {
     annotate(
       'error',
-      `signal-diag secretMatches=false bodyLen=${body.length} keys=${keys.join('|') || '(none)'} — client_payload.secret must equal DRAFTS_PUBLISH_SECRET`,
+      `signal-diag secretMatches=false bodyLen=${body.length} secretLen=${secretLen} expectedLen=${expectedLen} keys=${keys.join('|') || '(none)'} — client_payload.secret must equal DRAFTS_PUBLISH_SECRET`,
     );
     process.exit(1);
   }
