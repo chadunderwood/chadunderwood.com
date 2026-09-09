@@ -5,7 +5,7 @@
 // Required:
 //   1) Target in draft.meta:
 //        writing:<slug>   OR   signal:<id>
-//      Signal id = mono code under the post on https://chadunderwood.com/signal/
+//      Signal id = YYYYMMDDHHMMSS mono code under the post on https://chadunderwood.com/signal/
 //   2) Confirmation in draft body (first non-empty line):
 //        DELETE <same-slug-or-id>
 //      Exact match required (case-sensitive for the key).

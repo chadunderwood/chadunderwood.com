@@ -4,7 +4,7 @@
 // How to run:
 //   1) Put the Signal id (mono code under the post on /signal/) in draft.meta
 //      OR first line OR [[id]] / [[slug]]
-//      e.g. meta: shipping-staging   or first line: id: shipping-staging
+//      e.g. meta: 20260909183021   or first line: id: 20260909183021 (YYYYMMDDHHMMSS under the post)
 //   2) Run this Action → draft body + meta=id filled
 //   3) Edit + publish with drafts-api-signal.js action=update
 //      or delete with drafts-api-delete.js (type signal, id from meta)
@@ -76,7 +76,7 @@ if (!want || want.indexOf('REPLACE_') === 0) {
       }
     }
     if (!found) {
-      alert('Signal import: no post with id "' + want + '". Copy the mono id under the post on /signal/.');
+      alert('Signal import: no post with id "' + want + '". Copy the YYYYMMDDHHMMSS mono code under the post on /signal/.');
     } else {
       try {
         draft.content = String(found.body || '');

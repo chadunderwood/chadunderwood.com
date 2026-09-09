@@ -1,1 +1,255 @@
-PLACEHOLDER_WILL_REPLACE
+---
+import Base from '../layouts/Base.astro';
+import posts from '../content/signal/posts.json';
+import { getPublishedWriting, formatDate } from '../lib/writing';
+import { marked } from 'marked';
+
+const writing = await getPublishedWriting();
+const latest = writing[0];
+const entries = [...posts].sort((a, b) => (a.date < b.date ? 1 : -1));
+
+async function renderBody(body: string): Promise<string> {
+  return await marked.parse(String(body || ''), { breaks: true, gfm: true });
+}
+
+const ssrEntries = await Promise.all(
+  entries.map(async (e) => ({
+    id: e.id,
+    date: e.date,
+    dateLabel: formatDate(new Date(e.date)),
+    html: await renderBody(e.body),
+  })),
+);
+---
+
+<Base
+  title="Signal"
+  description="Short posts from Chad — a quiet microblog."
+  latestWritingId={latest?.id ?? null}
+  latestWritingDate={latest ? latest.data.date.toISOString() : null}
+>
+  <div class="page">
+    <h1 class="page-title">Signal</h1>
+    <p class="page-dek">
+      Short posts. Chronological. No likes, no threads — just notes from Chad.
+    </p>
+
+    <div id="signal-root" data-posts-url="/api/signal">
+      {ssrEntries.length === 0 ? (
+        <p class="empty-state" id="signal-empty">No signals yet.</p>
+      ) : (
+        <ul class="signal-list" id="signal-list">
+          {ssrEntries.map((e) => (
+            <li data-id={e.id}>
+              <div class="signal-body" set:html={e.html} />
+              <p class="meta signal-meta">
+                <time datetime={e.date}>{e.dateLabel}</time>
+                <button type="button" class="signal-id" data-copy-id={e.id} title="Copy YYYYMMDDHHMMSS id for Drafts delete/import">
+                  {e.id}
+                </button>
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  </div>
+</Base>
+
+<style>
+  .signal-list {
+    list-style: none;
+    margin: 1.5rem 0 0;
+    padding: 0;
+  }
+  .signal-list li + li {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--hairline);
+  }
+  .signal-body {
+    margin: 0 0 0.4rem;
+    font-size: 1.05rem;
+    line-height: 1.55;
+    max-width: min(var(--measure), 100%);
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  .signal-body :global(p) {
+    margin: 0 0 0.6em;
+  }
+  .signal-body :global(p:last-child) {
+    margin-bottom: 0;
+  }
+  .signal-body :global(h1),
+  .signal-body :global(h2),
+  .signal-body :global(h3) {
+    font-size: 1.1rem;
+    margin: 0.8em 0 0.35em;
+    line-height: 1.3;
+  }
+  .signal-body :global(h1:first-child),
+  .signal-body :global(h2:first-child),
+  .signal-body :global(h3:first-child) {
+    margin-top: 0;
+  }
+</style>
+
+<style is:global>
+  .signal-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.55rem 0.85rem;
+    margin: 0;
+  }
+  .signal-id {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    font: inherit;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    color: color-mix(in srgb, var(--text-muted) 78%, transparent);
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .signal-id:hover,
+  .signal-id:focus-visible {
+    color: var(--text-muted);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+  }
+  .signal-id[data-copied='1'] {
+    color: var(--accent-b);
+  }
+</style>
+
+<script>
+  import { marked } from 'marked';
+
+  function formatDateUTC(iso: string): string {
+    try {
+      return new Date(iso).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC',
+      });
+    } catch {
+      return iso;
+    }
+  }
+
+  function escapeHtml(s: string): string {
+    return s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  async function renderBody(body: string): Promise<string> {
+    try {
+      return await marked.parse(String(body || ''), { breaks: true, gfm: true });
+    } catch {
+      return '<p>' + escapeHtml(String(body || '')).replace(/\n/g, '<br>') + '</p>';
+    }
+  }
+
+  type Post = { id: string; date: string; body: string };
+
+  async function loadLivePosts() {
+    const root = document.getElementById('signal-root');
+    if (!root) return;
+    const url = root.getAttribute('data-posts-url') || '/api/signal';
+    let posts: Post[] = [];
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!Array.isArray(data)) return;
+      posts = data as Post[];
+    } catch {
+      return; // keep SSR fallback
+    }
+
+    posts = [...posts].sort((a, b) => (a.date < b.date ? 1 : -1));
+
+    let list = document.getElementById('signal-list');
+    const empty = document.getElementById('signal-empty');
+
+    if (posts.length === 0) {
+      if (list) list.remove();
+      if (!empty) {
+        const p = document.createElement('p');
+        p.className = 'empty-state';
+        p.id = 'signal-empty';
+        p.textContent = 'No signals yet.';
+        root.appendChild(p);
+      }
+      return;
+    }
+
+    if (empty) empty.remove();
+    if (!list) {
+      list = document.createElement('ul');
+      list.className = 'signal-list';
+      list.id = 'signal-list';
+      root.appendChild(list);
+    }
+
+    const htmlParts: string[] = [];
+    for (const e of posts) {
+      const bodyHtml = await renderBody(e.body || '');
+      const id = escapeHtml(e.id || '');
+      htmlParts.push(
+        '<li data-id="' +
+          id +
+          '"><div class="signal-body">' +
+          bodyHtml +
+          '</div><p class="meta signal-meta"><time datetime="' +
+          escapeHtml(e.date || '') +
+          '">' +
+          escapeHtml(formatDateUTC(e.date || '')) +
+          '</time><button type="button" class="signal-id" data-copy-id="' +
+          id +
+          '" title="Copy YYYYMMDDHHMMSS id for Drafts delete/import">' +
+          id +
+          '</button></p></li>',
+      );
+    }
+    list.innerHTML = htmlParts.join('');
+    wireCopyIds(list);
+  }
+
+  function wireCopyIds(root: ParentNode = document) {
+    root.querySelectorAll('button.signal-id[data-copy-id]').forEach((btn) => {
+      if ((btn as HTMLElement).dataset.wired === '1') return;
+      (btn as HTMLElement).dataset.wired = '1';
+      btn.addEventListener('click', async () => {
+        const id = (btn as HTMLElement).getAttribute('data-copy-id') || '';
+        if (!id) return;
+        try {
+          await navigator.clipboard.writeText(id);
+        } catch {
+          // fallback
+          const ta = document.createElement('textarea');
+          ta.value = id;
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); } catch {}
+          ta.remove();
+        }
+        (btn as HTMLElement).dataset.copied = '1';
+        window.setTimeout(() => { (btn as HTMLElement).dataset.copied = '0'; }, 1200);
+      });
+    });
+  }
+
+  loadLivePosts().then(() => wireCopyIds()).catch(() => wireCopyIds());
+  wireCopyIds();
+</script>

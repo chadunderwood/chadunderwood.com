@@ -17,7 +17,7 @@ npx wrangler@latest pages deploy dist --project-name=chadunderwood
 
 | Binding | Purpose |
 |---------|---------|
-| `SIGNAL_POSTS` | JSON array key `posts` → `{id,date,body}[]` |
+| `SIGNAL_POSTS` | JSON array key `posts` → `{id,date,body}[]` (`id` = `YYYYMMDDHHMMSS` UTC) |
 | `WRITING_POSTS` | keys by slug → writing JSON |
 
 ## PUBLISH_SECRET

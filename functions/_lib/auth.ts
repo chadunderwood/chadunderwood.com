@@ -99,3 +99,22 @@ export type WritingPost = {
 };
 
 export const SIGNAL_KEY = 'posts';
+
+/** Signal post id: YYYYMMDDHHMMSS in UTC from an ISO date (or now). */
+export function signalTimestampId(iso?: string): string {
+  const d = iso ? new Date(iso) : new Date();
+  if (Number.isNaN(d.getTime())) {
+    return signalTimestampId();
+  }
+  const p = (n: number) => String(n).padStart(2, '0');
+  return (
+    String(d.getUTCFullYear()) +
+    p(d.getUTCMonth() + 1) +
+    p(d.getUTCDate()) +
+    p(d.getUTCHours()) +
+    p(d.getUTCMinutes()) +
+    p(d.getUTCSeconds())
+  );
+}
+
+export const SIGNAL_ID_RE = /^\d{14}$/;

@@ -4,6 +4,8 @@ import {
   json,
   readJson,
   slugify,
+  signalTimestampId,
+  SIGNAL_ID_RE,
   UNAUTH_HINT,
   type Env,
   type SignalPost,
@@ -80,19 +82,27 @@ async function handleSignal(
   const text = String(body.body || '').trim();
   if (!text) return json({ ok: false, error: 'body required' }, 400, headers);
 
-  let id = String(body.id || '').trim();
-  if (!id) id = slugify(text.slice(0, 40), 40);
-
   const now = new Date().toISOString();
-  const existingIdx = posts.findIndex((p) => p.id === id);
+  let id = String(body.id || '').trim();
 
-  if (action === 'create' && existingIdx >= 0) {
-    // upsert on create if same id
-    posts[existingIdx] = { id, date: posts[existingIdx].date || now, body: text };
-  } else if (action === 'update') {
+  if (action === 'update') {
+    if (!id) return json({ ok: false, error: 'id required for update (YYYYMMDDHHMMSS)' }, 400, headers);
+    const existingIdx = posts.findIndex((p) => p.id === id);
     if (existingIdx < 0) return json({ ok: false, error: 'Not found' }, 404, headers);
     posts[existingIdx] = { id, date: posts[existingIdx].date || now, body: text };
   } else {
+    // create — always assign YYYYMMDDHHMMSS (ignore slug-like client ids)
+    if (!SIGNAL_ID_RE.test(id)) {
+      id = signalTimestampId(now);
+    }
+    // collision: bump seconds until unique
+    let guard = 0;
+    while (posts.some((p) => p.id === id) && guard < 60) {
+      const d = new Date(now);
+      d.setUTCSeconds(d.getUTCSeconds() + guard + 1);
+      id = signalTimestampId(d.toISOString());
+      guard++;
+    }
     posts.unshift({ id, date: now, body: text });
   }
 

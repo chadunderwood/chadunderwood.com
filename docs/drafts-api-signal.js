@@ -4,8 +4,10 @@
 // Auth: Cloudflare Pages secret name = PUBLISH_SECRET
 // Drafts Credential name = PUBLISH_SECRET (Settings → Credentials → password)
 // API accepts BOTH Authorization: Bearer <secret> AND JSON body.secret
-// Update: set [[action]]=update (or draft tag) so action is "update";
-//   keep slug/id in draft.meta (import scripts set this).
+//
+// Create: leave draft.meta empty — server assigns id = YYYYMMDDHHMMSS (UTC).
+// Update: set draft.meta to the mono YYYYMMDDHHMMSS under the post on /signal/
+//   and [[action]]=update (or tag).
 
 const PUBLISH_URL = 'https://chadunderwood.com/api/publish';
 const PUBLISH_SECRET_FALLBACK = 'REPLACE_WITH_PUBLISH_SECRET';
@@ -20,18 +22,6 @@ function resolvePublishSecret() {
     }
   } catch (e) {}
   return String(PUBLISH_SECRET_FALLBACK || '').trim();
-}
-
-function slugify(text) {
-  return (
-    String(text || 'signal')
-      .toLowerCase()
-      .trim()
-      .replace(/['"]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 40) || 'signal'
-  );
 }
 
 let body = '';
@@ -50,22 +40,27 @@ if (!body) {
 }
 body = String(body || '').trim();
 
-let id = '';
-try {
-  id = String(draft.meta || '').trim();
-} catch (e) {}
-if (!id) id = slugify(body.slice(0, 40));
-
 let action = 'create';
 try {
   const tag = String(draft.processTemplate('[[action]]') || '').trim().toLowerCase();
   if (tag === 'update' || tag === 'create') action = tag;
 } catch (e) {}
 
+// update → YYYYMMDDHHMMSS in draft.meta; create → empty (server assigns)
+let id = '';
+try {
+  id = String(draft.meta || '').trim();
+} catch (e) {}
+if (id && !/^\d{14}$/.test(id)) {
+  if (action === 'create') id = '';
+}
+
 const PUBLISH_SECRET = resolvePublishSecret();
 
 if (!body) {
   alert('Signal publish: draft is empty.');
+} else if (action === 'update' && !/^\d{14}$/.test(id)) {
+  alert('Signal update: set draft.meta to the YYYYMMDDHHMMSS code under the post on /signal/.');
 } else if (!PUBLISH_SECRET || PUBLISH_SECRET.indexOf('REPLACE_') === 0) {
   alert(
     'Signal publish: set Drafts Credential "PUBLISH_SECRET" (same value as Cloudflare Pages secret PUBLISH_SECRET).',
@@ -74,10 +69,10 @@ if (!body) {
   const requestBody = {
     type: 'signal',
     action: action,
-    id: id,
     body: body,
     secret: PUBLISH_SECRET,
   };
+  if (id) requestBody.id = id;
 
   const http = HTTP.create();
   const response = http.request({
@@ -97,7 +92,20 @@ if (!body) {
   } catch (e) {}
 
   if ((code === 200 || code === 201) && parsed && parsed.ok) {
-    alert('Signal live → ' + (parsed.url || 'https://chadunderwood.com/signal/') + '\nid: ' + (parsed.id || id));
+    const liveId = parsed.id || id || '';
+    try {
+      if (liveId) {
+        draft.meta = liveId;
+        draft.update();
+      }
+    } catch (e) {}
+    alert(
+      'Signal live → ' +
+        (parsed.url || 'https://chadunderwood.com/signal/') +
+        '\nid: ' +
+        liveId +
+        ' (YYYYMMDDHHMMSS — use for delete/import)',
+    );
   } else {
     alert(
       'Signal publish failed HTTP ' +
