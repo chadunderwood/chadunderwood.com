@@ -1,0 +1,226 @@
+@import "./tokens.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+  background: var(--bg);
+  scroll-behavior: smooth;
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  max-width: 100%;
+  overflow-x: clip;
+  font-family: var(--font);
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  padding-bottom: max(var(--dock-pad), calc(var(--dock-pad) + env(safe-area-inset-bottom, 0px)));
+}
+
+a {
+  color: inherit;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+a:hover {
+  color: var(--accent-b);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.page {
+  width: min(720px, calc(100% - 2.5rem));
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 4.5rem 0 3.5rem;
+  box-sizing: border-box;
+}
+
+.page-wide {
+  width: min(920px, calc(100% - 2.5rem));
+  max-width: 100%;
+}
+
+main {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+img,
+video,
+iframe,
+svg,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (max-width: 640px) {
+  body {
+    font-size: 16px;
+  }
+  .page,
+  .page-wide {
+    width: min(720px, calc(100% - 1.5rem));
+    padding: 3rem 0 2.5rem;
+  }
+  .page-title {
+    font-size: clamp(1.5rem, 6vw, 2rem);
+  }
+}
+
+.page-title {
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.5rem;
+  line-height: 1.2;
+}
+
+.page-dek {
+  color: var(--text-muted);
+  margin: 0 0 2.5rem;
+  font-size: 1rem;
+}
+
+.meta {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.hairline {
+  border: 0;
+  border-top: 1px solid var(--hairline);
+  margin: 2rem 0;
+}
+
+.prose {
+  max-width: min(var(--measure), 100%);
+}
+
+.prose h2,
+.prose h3 {
+  letter-spacing: -0.015em;
+  margin-top: 2rem;
+  line-height: 1.3;
+}
+
+.prose p {
+  margin: 0 0 1.15em;
+}
+
+.prose a {
+  color: var(--accent-b);
+}
+
+.prose code {
+  font-size: 0.92em;
+  background: var(--bg-elevated);
+  padding: 0.12em 0.35em;
+  border-radius: 4px;
+}
+
+
+.prose img,
+.prose video,
+.prose iframe,
+.prose svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.prose figure {
+  margin: 1.25em 0;
+  max-width: 100%;
+}
+
+.prose figure img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+}
+
+.prose p > img,
+.prose li > img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1em auto;
+}
+
+.prose pre,
+.prose table {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+article[data-essay],
+.prose {
+  overflow-x: clip;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.badge-example {
+  display: inline-block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent-c);
+  border: 1px solid color-mix(in srgb, var(--accent-c) 40%, transparent);
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  vertical-align: middle;
+  margin-left: 0.5rem;
+}
+
+.empty-state {
+  color: var(--text-muted);
+  border: 1px dashed var(--hairline);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
