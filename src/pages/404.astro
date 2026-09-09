@@ -1,0 +1,22 @@
+---
+import Base from '../layouts/Base.astro';
+import { getPublishedWriting } from '../lib/writing';
+
+const posts = await getPublishedWriting();
+const latest = posts[0];
+---
+
+<Base
+  title="Not found"
+  description="This page isn’t here."
+  noindex={true}
+  latestWritingId={latest?.id ?? null}
+  latestWritingDate={latest ? latest.data.date.toISOString() : null}
+>
+  <div class="page prose">
+    <p class="meta">404</p>
+    <h1 class="page-title">Nothing at this address</h1>
+    <p class="page-dek">That path doesn’t exist on this site — or it moved. The dock still works.</p>
+    <p><a href="/">← Home</a> · <a href="/writing/">Writing</a></p>
+  </div>
+</Base>

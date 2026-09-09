@@ -1,0 +1,29 @@
+---
+import Base from '../layouts/Base.astro';
+import { getPublishedWriting, formatDate } from '../lib/writing';
+import nowRaw from '../content/now.md?raw';
+import matter from 'gray-matter';
+import { marked } from 'marked';
+
+const posts = await getPublishedWriting();
+const latest = posts[0];
+
+const { data, content } = matter(nowRaw);
+const html = await marked.parse(content);
+const updated = data.updated ? new Date(data.updated) : new Date();
+---
+
+<Base
+  title="Now"
+  description="What Chad is focused on right now."
+  latestWritingId={latest?.id ?? null}
+  latestWritingDate={latest ? latest.data.date.toISOString() : null}
+>
+  <div class="page prose">
+    <h1 class="page-title">Now</h1>
+    <p class="page-dek meta">
+      Last updated <time datetime={updated.toISOString()}>{formatDate(updated)}</time>
+    </p>
+    <div set:html={html} />
+  </div>
+</Base>

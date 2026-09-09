@@ -1,0 +1,59 @@
+---
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { getPublishedWriting, formatDate, editionLabel } from '../../lib/writing';
+
+export async function getStaticPaths() {
+  const posts = await getPublishedWriting();
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const ed = editionLabel(post.data);
+const posts = await getPublishedWriting();
+const latest = posts[0];
+---
+
+<Base
+  title={post.data.title}
+  description={post.data.summary || post.data.title}
+  latestWritingId={latest?.id ?? null}
+  latestWritingDate={latest ? latest.data.date.toISOString() : null}
+  essayProgress={true}
+>
+  <article class="page prose" data-essay>
+    <header class="essay-header">
+      <h1 class="page-title">
+        {post.data.title}
+        {post.data.example && <span class="badge-example">Example</span>}
+      </h1>
+      <p class="meta">
+        <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
+        {ed && <> · {ed}</>}
+      </p>
+    </header>
+    <Content />
+    <hr class="hairline" />
+    <p class="meta"><a href="/writing/">← All writing</a></p>
+  </article>
+</Base>
+
+<style>
+  .essay-header {
+    margin-bottom: 2rem;
+  }
+  article[data-essay] :global(img),
+  article[data-essay] :global(video),
+  article[data-essay] :global(figure) {
+    max-width: 100%;
+    height: auto;
+  }
+  article[data-essay] :global(img) {
+    display: block;
+    margin-inline: auto;
+  }
+</style>

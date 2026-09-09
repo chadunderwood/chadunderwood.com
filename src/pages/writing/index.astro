@@ -1,0 +1,75 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getPublishedWriting, formatDate, editionLabel } from '../../lib/writing';
+
+const posts = await getPublishedWriting();
+const latest = posts[0];
+---
+
+<Base
+  title="Writing"
+  description="Essays and notes by Chad Underwood."
+  latestWritingId={latest?.id ?? null}
+  latestWritingDate={latest ? latest.data.date.toISOString() : null}
+>
+  <div class="page">
+    <h1 class="page-title">Writing</h1>
+    <p class="page-dek">Essays and notes. RSS at <a href="/rss.xml">/rss.xml</a>.</p>
+
+    {posts.length === 0 ? (
+      <p class="empty-state">Writing soon.</p>
+    ) : (
+      <ul class="writing-list">
+        {posts.map((post) => {
+          const ed = editionLabel(post.data);
+          return (
+            <li>
+              <a class="writing-link" href={`/writing/${post.id}/`}>
+                <span class="writing-title">
+                  {post.data.title}
+                  {post.data.example && <span class="badge-example">Example</span>}
+                </span>
+                {post.data.summary && <span class="writing-dek">{post.data.summary}</span>}
+                <span class="meta">
+                  <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
+                  {ed && <> · {ed}</>}
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    )}
+  </div>
+</Base>
+
+<style>
+  .writing-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .writing-list li + li {
+    border-top: 1px solid var(--hairline);
+  }
+  .writing-link {
+    display: grid;
+    gap: 0.35rem;
+    padding: 1.15rem 0;
+    text-decoration: none;
+  }
+  .writing-link:hover .writing-title {
+    color: var(--accent-b);
+  }
+  .writing-title {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    font-size: 1.15rem;
+    font-weight: 550;
+    letter-spacing: -0.015em;
+  }
+  .writing-dek {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+</style>
