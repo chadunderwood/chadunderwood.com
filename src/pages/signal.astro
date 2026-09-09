@@ -8,18 +8,29 @@ const writing = await getPublishedWriting();
 const latest = writing[0];
 const entries = [...posts].sort((a, b) => (a.date < b.date ? 1 : -1));
 
+const PAGE_SIZE = 10;
+const requestedPage = Math.max(1, parseInt(Astro.url.searchParams.get('page') || '1', 10) || 1);
+const totalPages = Math.max(1, Math.ceil(entries.length / PAGE_SIZE) || 1);
+const page = Math.min(requestedPage, totalPages);
+const pageSlice = entries.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
 async function renderBody(body: string): Promise<string> {
   return await marked.parse(String(body || ''), { breaks: true, gfm: true });
 }
 
 const ssrEntries = await Promise.all(
-  entries.map(async (e) => ({
+  pageSlice.map(async (e) => ({
     id: e.id,
     date: e.date,
     dateLabel: formatDate(new Date(e.date)),
     html: await renderBody(e.body),
   })),
 );
+
+function pageHref(n: number): string {
+  if (n <= 1) return '/signal/';
+  return `/signal/?page=${n}`;
+}
 ---
 
 <Base
@@ -34,23 +45,47 @@ const ssrEntries = await Promise.all(
       Short posts. Chronological. No likes, no threads — just notes from Chad.
     </p>
 
-    <div id="signal-root" data-posts-url="/api/signal">
+    <div
+      id="signal-root"
+      data-posts-url="/api/signal"
+      data-page-size={String(PAGE_SIZE)}
+      data-page={String(page)}
+    >
       {ssrEntries.length === 0 ? (
         <p class="empty-state" id="signal-empty">No signals yet.</p>
       ) : (
-        <ul class="signal-list" id="signal-list">
-          {ssrEntries.map((e) => (
-            <li data-id={e.id}>
-              <div class="signal-body" set:html={e.html} />
-              <p class="meta signal-meta">
-                <time datetime={e.date}>{e.dateLabel}</time>
-                <button type="button" class="signal-id" data-copy-id={e.id} title="Copy YYYYMMDDHHMMSS id for Drafts delete/import">
-                  {e.id}
-                </button>
-              </p>
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul class="signal-list" id="signal-list">
+            {ssrEntries.map((e) => (
+              <li data-id={e.id}>
+                <div class="signal-body" set:html={e.html} />
+                <p class="meta signal-meta">
+                  <time datetime={e.date}>{e.dateLabel}</time>
+                  <button type="button" class="signal-id" data-copy-id={e.id} title="Copy YYYYMMDDHHMMSS id for Drafts delete/import">
+                    {e.id}
+                  </button>
+                </p>
+              </li>
+            ))}
+          </ul>
+          {totalPages > 1 && (
+            <nav class="signal-pager" id="signal-pager" aria-label="Signal pages">
+              {page > 1 ? (
+                <a class="signal-pager-link" href={pageHref(page - 1)} rel="prev">Newer</a>
+              ) : (
+                <span class="signal-pager-link is-disabled" aria-disabled="true">Newer</span>
+              )}
+              <span class="signal-pager-status">
+                Page {page} of {totalPages}
+              </span>
+              {page < totalPages ? (
+                <a class="signal-pager-link" href={pageHref(page + 1)} rel="next">Older</a>
+              ) : (
+                <span class="signal-pager-link is-disabled" aria-disabled="true">Older</span>
+              )}
+            </nav>
+          )}
+        </>
       )}
     </div>
   </div>
@@ -63,9 +98,16 @@ const ssrEntries = await Promise.all(
     padding: 0;
   }
   .signal-list li + li {
-    margin-top: 1.25rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid var(--hairline);
+    margin-top: 1.35rem;
+    padding-top: 0;
+    border-top: 0;
+  }
+  /* Inset dotted divider — slight padding each side, not edge-to-edge */
+  .signal-list li + li::before {
+    content: '';
+    display: block;
+    margin: 0 0.85rem 1.35rem;
+    border-top: 1px dotted var(--hairline);
   }
   .signal-body {
     margin: 0 0 0.4rem;
@@ -92,6 +134,33 @@ const ssrEntries = await Promise.all(
   .signal-body :global(h2:first-child),
   .signal-body :global(h3:first-child) {
     margin-top: 0;
+  }
+  .signal-pager {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    margin: 1.75rem 0 0;
+    padding: 0 0.85rem;
+    font-size: 0.92rem;
+  }
+  .signal-pager-status {
+    color: var(--text-muted);
+  }
+  .signal-pager-link {
+    color: var(--text-muted);
+    text-decoration: none;
+  }
+  .signal-pager-link:hover,
+  .signal-pager-link:focus-visible {
+    color: var(--text);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+  }
+  .signal-pager-link.is-disabled {
+    opacity: 0.4;
+    pointer-events: none;
   }
 </style>
 
@@ -131,6 +200,8 @@ const ssrEntries = await Promise.all(
 <script>
   import { marked } from 'marked';
 
+  const PAGE_SIZE_DEFAULT = 10;
+
   function formatDateUTC(iso: string): string {
     try {
       return new Date(iso).toLocaleDateString('en-US', {
@@ -162,10 +233,55 @@ const ssrEntries = await Promise.all(
 
   type Post = { id: string; date: string; body: string };
 
+  function pageFromUrl(): number {
+    const n = parseInt(new URL(location.href).searchParams.get('page') || '1', 10);
+    return Number.isFinite(n) && n > 0 ? n : 1;
+  }
+
+  function pageHref(n: number): string {
+    if (n <= 1) return '/signal/';
+    return '/signal/?page=' + n;
+  }
+
+  function renderPager(root: HTMLElement, page: number, totalPages: number) {
+    let pager = document.getElementById('signal-pager');
+    if (totalPages <= 1) {
+      if (pager) pager.remove();
+      return;
+    }
+    if (!pager) {
+      pager = document.createElement('nav');
+      pager.className = 'signal-pager';
+      pager.id = 'signal-pager';
+      pager.setAttribute('aria-label', 'Signal pages');
+      root.appendChild(pager);
+    }
+    const newer =
+      page > 1
+        ? '<a class="signal-pager-link" href="' + pageHref(page - 1) + '" rel="prev">Newer</a>'
+        : '<span class="signal-pager-link is-disabled" aria-disabled="true">Newer</span>';
+    const older =
+      page < totalPages
+        ? '<a class="signal-pager-link" href="' + pageHref(page + 1) + '" rel="next">Older</a>'
+        : '<span class="signal-pager-link is-disabled" aria-disabled="true">Older</span>';
+    pager.innerHTML =
+      newer +
+      '<span class="signal-pager-status">Page ' +
+      page +
+      ' of ' +
+      totalPages +
+      '</span>' +
+      older;
+  }
+
   async function loadLivePosts() {
     const root = document.getElementById('signal-root');
     if (!root) return;
     const url = root.getAttribute('data-posts-url') || '/api/signal';
+    const pageSize = Math.max(
+      1,
+      parseInt(root.getAttribute('data-page-size') || String(PAGE_SIZE_DEFAULT), 10) || PAGE_SIZE_DEFAULT,
+    );
     let posts: Post[] = [];
     try {
       const res = await fetch(url, { cache: 'no-store' });
@@ -184,6 +300,7 @@ const ssrEntries = await Promise.all(
 
     if (posts.length === 0) {
       if (list) list.remove();
+      document.getElementById('signal-pager')?.remove();
       if (!empty) {
         const p = document.createElement('p');
         p.className = 'empty-state';
@@ -202,8 +319,12 @@ const ssrEntries = await Promise.all(
       root.appendChild(list);
     }
 
+    const totalPages = Math.max(1, Math.ceil(posts.length / pageSize));
+    const page = Math.min(pageFromUrl(), totalPages);
+    const slice = posts.slice((page - 1) * pageSize, page * pageSize);
+
     const htmlParts: string[] = [];
-    for (const e of posts) {
+    for (const e of slice) {
       const bodyHtml = await renderBody(e.body || '');
       const id = escapeHtml(e.id || '');
       htmlParts.push(
@@ -223,6 +344,7 @@ const ssrEntries = await Promise.all(
       );
     }
     list.innerHTML = htmlParts.join('');
+    renderPager(root, page, totalPages);
     wireCopyIds(list);
   }
 
@@ -236,20 +358,25 @@ const ssrEntries = await Promise.all(
         try {
           await navigator.clipboard.writeText(id);
         } catch {
-          // fallback
           const ta = document.createElement('textarea');
           ta.value = id;
           document.body.appendChild(ta);
           ta.select();
-          try { document.execCommand('copy'); } catch {}
+          try {
+            document.execCommand('copy');
+          } catch {}
           ta.remove();
         }
         (btn as HTMLElement).dataset.copied = '1';
-        window.setTimeout(() => { (btn as HTMLElement).dataset.copied = '0'; }, 1200);
+        window.setTimeout(() => {
+          (btn as HTMLElement).dataset.copied = '0';
+        }, 1200);
       });
     });
   }
 
-  loadLivePosts().then(() => wireCopyIds()).catch(() => wireCopyIds());
+  loadLivePosts()
+    .then(() => wireCopyIds())
+    .catch(() => wireCopyIds());
   wireCopyIds();
 </script>
