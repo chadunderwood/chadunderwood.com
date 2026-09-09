@@ -27,9 +27,8 @@ function loadPayload() {
 }
 
 function annotate(level, message) {
-  // Visible on the Actions UI annotations (often without full log auth)
   const clean = String(message).replace(/\r?\n/g, ' ').replace(/%/g, '%25');
-  console.error(`::${level}::${clean}`);
+  console.log(`::${level}::${clean}`);
 }
 
 const payload = loadPayload();

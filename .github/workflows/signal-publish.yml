@@ -52,12 +52,16 @@ jobs:
           }
           fs.writeFileSync('drafts-payload.json', JSON.stringify(payload));
           const keys = Object.keys(payload || {});
-          console.log('payload keys:', keys.join(', ') || '(none)');
-          console.log('body length:', String(payload.body || '').length);
-          console.log('has secret field:', Object.prototype.hasOwnProperty.call(payload || {}, 'secret'));
           const bodyLen = String(payload.body || '').trim().length;
-          const hasSecret = Object.prototype.hasOwnProperty.call(payload || {}, 'secret');
-          console.log(`::notice::signal-payload keys=${keys.join('|') || '(none)'} bodyLen=${bodyLen} hasSecretField=${hasSecret}`);
+          const got = String(payload.secret ?? '').trim();
+          const expected = String(process.env.DRAFTS_PUBLISH_SECRET || '').trim();
+          const secretMatches = expected ? got === expected : null;
+          const msg = `signal-payload keys=${keys.join('|') || '(none)'} bodyLen=${bodyLen} hasSecretField=${Object.prototype.hasOwnProperty.call(payload || {}, 'secret')} secretMatches=${secretMatches} secretLen=${got.length} expectedLen=${expected.length}`;
+          console.log(msg);
+          console.log(`::notice::${msg}`);
+          if (expected && got !== expected) {
+            console.log(`::error::signal-diag secretMatches=false bodyLen=${bodyLen} secretLen=${got.length} expectedLen=${expected.length}`);
+          }
           NODE
 
       - name: Apply signal post
@@ -67,9 +71,10 @@ jobs:
           SITE_URL: https://chadunderwood.com
         run: |
           set -euo pipefail
-          export DRAFTS_PAYLOAD="$(cat drafts-payload.json)"
+          export DRAFTS_PAYLOAD
+          DRAFTS_PAYLOAD="$(cat drafts-payload.json)"
           node scripts/apply-signal-publish.mjs | tee apply-out.txt
-          URL="$(head -1 apply-out.txt)"
+          URL="$(grep -E '^https://' apply-out.txt | head -1)"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Published URL: $URL"
 
