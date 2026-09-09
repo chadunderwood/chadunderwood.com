@@ -1,20 +1,18 @@
 // Drafts Action — Import Writing from chadunderwood.com into this draft for edit
 // HTTP.create only — alert on success/fail; no context.success / context.fail
 //
-// How to run:
-//   1) Put the writing slug in draft.meta OR the first line of the draft OR [[slug]]
-//      e.g. meta: hello-internet   or first line: slug: hello-internet
-//   2) Run this Action → draft is filled with title + body
-//   3) Edit, then run docs/drafts-api-writing.js with [[action]]=update (or tag update)
+// Flow: Prompt for slug (prefills draft.meta / [[slug]] / first line if present).
+// Prefer docs/drafts-api-import.js for a Writing vs Signal chooser.
 //
 // Auth: none (public GET /api/writing/:slug)
 
 const API = 'https://chadunderwood.com/api/writing/';
 
-function resolveSlug() {
+function resolveSlugHint() {
   let slug = '';
   try {
     slug = String(draft.meta || '').trim();
+    if (slug.indexOf('writing:') === 0) slug = slug.slice(8).trim();
   } catch (e) {}
   if (!slug) {
     try {
@@ -31,7 +29,6 @@ function resolveSlug() {
           break;
         }
         if (!slug && lines[i].trim() && lines[i].indexOf(' ') < 0 && lines[i].indexOf(':') < 0) {
-          // bare first-line slug
           slug = lines[i].trim();
           break;
         }
@@ -41,9 +38,22 @@ function resolveSlug() {
   return slug.replace(/^\/+|\/+$/g, '');
 }
 
-const slug = resolveSlug();
-if (!slug || slug.indexOf('REPLACE_') === 0) {
-  alert('Writing import: set slug in draft.meta, [[slug]], or first line (e.g. hello-internet).');
+function promptSlug(prefill) {
+  const p = Prompt.create();
+  p.title = 'Import Writing';
+  p.message = 'Enter the writing slug (path under /writing/).';
+  p.addTextField('slug', 'Slug', prefill || '');
+  p.addButton('Import');
+  p.isCancellable = true;
+  if (!p.show()) return null;
+  return String((p.fieldValues && p.fieldValues.slug) || '').trim().replace(/^\/+|\/+$/g, '');
+}
+
+const slug = promptSlug(resolveSlugHint());
+if (slug === null) {
+  // cancelled
+} else if (!slug || slug.indexOf('REPLACE_') === 0) {
+  alert('Writing import: enter a slug (e.g. hello-internet).');
 } else {
   const http = HTTP.create();
   const response = http.request({
@@ -58,7 +68,9 @@ if (!slug || slug.indexOf('REPLACE_') === 0) {
   } catch (e) {}
 
   if (code === 200 && parsed && parsed.title != null) {
-    const title = String(parsed.title || '').replace(/^#+\s*/, '').trim();
+    const title = String(parsed.title || '')
+      .replace(/^#+\s*/, '')
+      .trim();
     const body = String(parsed.body || '');
     const text = title ? '# ' + title + '\n\n' + body : body;
     try {

@@ -29,7 +29,7 @@ npx wrangler@latest pages secret put PUBLISH_SECRET --project-name=chadunderwood
 
 Drafts (iOS/Mac): create Credential named **`PUBLISH_SECRET`** (password field)
 with the **exact same** value as the Pages secret. Scripts:
-`docs/drafts-api-writing.js`, `docs/drafts-api-signal.js`, `docs/drafts-api-delete.js`
+`docs/drafts-api-writing.js`, `docs/drafts-api-signal.js`, `docs/drafts-api-delete.js`, `docs/drafts-api-import.js`
 read that Credential and send both Bearer + `body.secret`.
 
 401 responses are JSON: `{ ok:false, error:"unauthorized", hint:"…" }` (no secret values).
@@ -58,7 +58,7 @@ Separate from publish. Requires an exact `confirm` match.
     "confirm": "<exact slug or id>", "secret?": "…" }
   ```
 - `confirm` **must equal** the `slug` (writing) or `id` (signal). Mismatch → 400 `confirm_required`.
-- Drafts: `docs/drafts-api-delete.js` — meta `writing:<slug>` / `signal:<id>`, body line `DELETE <same-key>`.
+- Drafts: `docs/drafts-api-delete.js` — Prompt Writing vs Signal → slug or YYYYMMDDHHMMSS → type `DELETE <same-key>`.
 
 Reads (public):
 
@@ -86,7 +86,8 @@ Public GETs — paste into Drafts Actions:
 
 | Script | Input | Effect |
 |--------|-------|--------|
-| `docs/drafts-api-import-writing.js` | slug in `draft.meta` / first line / `[[slug]]` | fills draft title+body; meta=slug |
-| `docs/drafts-api-import-signal.js` | id from `/signal/` mono code in meta / first line / `[[id]]` | fills body; meta=id |
+| `docs/drafts-api-import.js` | Prompt Writing vs Signal → slug or YYYYMMDDHHMMSS | fills body; meta set |
+| `docs/drafts-api-import-writing.js` | Prompt for slug (prefills meta/`[[slug]]`) | fills body; meta=slug |
+| `docs/drafts-api-import-signal.js` | Prompt for YYYYMMDDHHMMSS (prefills meta/`[[id]]`) | fills body; meta=id |
 
-Then publish with `action=update` via `drafts-api-writing.js` / `drafts-api-signal.js`, or **safe-delete** via `drafts-api-delete.js` (`DELETE <id>` confirm → `/api/delete`).
+Then publish with `action=update` via `drafts-api-writing.js` / `drafts-api-signal.js`, or **safe-delete** via `drafts-api-delete.js` (Prompt type → key → `DELETE <key>` → `/api/delete`).

@@ -1,22 +1,18 @@
 // Drafts Action — Import Signal from chadunderwood.com into this draft for edit/delete
 // HTTP.create only — alert on success/fail; no context.success / context.fail
 //
-// How to run:
-//   1) Put the Signal id (mono code under the post on /signal/) in draft.meta
-//      OR first line OR [[id]] / [[slug]]
-//      e.g. meta: 20260909183021   or first line: id: 20260909183021 (YYYYMMDDHHMMSS under the post)
-//   2) Run this Action → draft body + meta=id filled
-//   3) Edit + publish with drafts-api-signal.js action=update
-//      or delete with drafts-api-delete.js (type signal, id from meta)
+// Flow: Prompt for YYYYMMDDHHMMSS id (prefills draft.meta / [[id]] / first line if present).
+// Prefer docs/drafts-api-import.js for a Writing vs Signal chooser.
 //
 // Auth: none (public GET /api/signal)
 
 const API = 'https://chadunderwood.com/api/signal';
 
-function resolveId() {
+function resolveIdHint() {
   let id = '';
   try {
     id = String(draft.meta || '').trim();
+    if (id.indexOf('signal:') === 0) id = id.slice(7).trim();
   } catch (e) {}
   if (!id) {
     try {
@@ -42,9 +38,22 @@ function resolveId() {
   return id;
 }
 
-const want = resolveId();
-if (!want || want.indexOf('REPLACE_') === 0) {
-  alert('Signal import: set id in draft.meta, [[id]], or first line (copy from /signal/ mono id).');
+function promptId(prefill) {
+  const p = Prompt.create();
+  p.title = 'Import Signal';
+  p.message = 'Paste the YYYYMMDDHHMMSS mono code shown under the post on /signal/.';
+  p.addTextField('id', 'Signal id', prefill || '');
+  p.addButton('Import');
+  p.isCancellable = true;
+  if (!p.show()) return null;
+  return String((p.fieldValues && p.fieldValues.id) || '').trim();
+}
+
+const want = promptId(resolveIdHint());
+if (want === null) {
+  // cancelled
+} else if (!want || want.indexOf('REPLACE_') === 0) {
+  alert('Signal import: paste the YYYYMMDDHHMMSS mono code from /signal/.');
 } else {
   const http = HTTP.create();
   const response = http.request({
@@ -64,19 +73,17 @@ if (!want || want.indexOf('REPLACE_') === 0) {
     for (let i = 0; i < posts.length; i++) {
       const p = posts[i] || {};
       const pid = String(p.id || '');
-      const pdate = String(p.date || '');
       if (pid === want || pid.toLowerCase() === wantLower) {
-        found = p;
-        break;
-      }
-      // allow matching a date prefix / date-code fragment
-      if (pdate && (pdate.indexOf(want) === 0 || want.indexOf(pdate.slice(0, 10)) === 0)) {
         found = p;
         break;
       }
     }
     if (!found) {
-      alert('Signal import: no post with id "' + want + '". Copy the YYYYMMDDHHMMSS mono code under the post on /signal/.');
+      alert(
+        'Signal import: no post with id "' +
+          want +
+          '". Copy the YYYYMMDDHHMMSS mono code under the post on /signal/.',
+      );
     } else {
       try {
         draft.content = String(found.body || '');
@@ -85,7 +92,7 @@ if (!want || want.indexOf('REPLACE_') === 0) {
       } catch (e) {
         alert('Signal import: loaded OK but could not write draft.\n' + String(e).slice(0, 200));
       }
-      alert('Imported signal → ' + (found.id || want) + '\nEdit+update or delete using this id.');
+      alert('Imported signal → ' + (found.id || want) + '\nEdit+update or safe-delete using this id.');
     }
   } else {
     alert(
