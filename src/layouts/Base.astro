@@ -1,0 +1,90 @@
+---
+import '../styles/global.css';
+import Dock from '../components/Dock.astro';
+import site from '../content/site.json';
+
+interface Props {
+  title?: string;
+  description?: string;
+  canonicalPath?: string;
+  noindex?: boolean;
+  ogImage?: string;
+  latestWritingId?: string | null;
+  latestWritingDate?: string | null;
+  essayProgress?: boolean;
+}
+
+const {
+  title,
+  description = site.description,
+  canonicalPath = Astro.url.pathname,
+  noindex = false,
+  ogImage = site.defaultOg,
+  latestWritingId = null,
+  latestWritingDate = null,
+  essayProgress = false,
+} = Astro.props;
+
+const configuredSite = Astro.site?.toString().replace(/\/$/, '') || '';
+const pageTitle = title ? `${title} · ${site.name}` : site.name;
+// Prefer SITE_URL when set (staging/prod). Until then use path-only canonical + relative OG so we don't bake chadunderwood.com early.
+const canonical = configuredSite
+  ? new URL(canonicalPath, configuredSite).toString()
+  : canonicalPath.startsWith('http')
+    ? canonicalPath
+    : canonicalPath;
+const og = configuredSite ? new URL(ogImage, configuredSite).toString() : ogImage;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex,nofollow" />}
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content={og} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="alternate" type="application/rss+xml" title={`${site.name} Writing`} href="/rss.xml" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script is:inline>
+      (function () {
+        try {
+          var theme = localStorage.getItem('cu:theme');
+          if (theme !== 'light' && theme !== 'dark') theme = 'dark';
+          document.documentElement.setAttribute('data-theme', theme);
+          var h = new Date().getHours();
+          var p = h >= 5 && h < 8 ? 'dawn' : h >= 8 && h < 17 ? 'day' : h >= 17 && h < 20 ? 'dusk' : 'night';
+          document.documentElement.setAttribute('data-period', p);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      })();
+    </script>
+  </head>
+  <body
+    data-latest-writing-id={latestWritingId || ''}
+    data-latest-writing-date={latestWritingDate || ''}
+    data-essay-progress={essayProgress ? '1' : '0'}
+  >
+    <a class="sr-only" href="#main">Skip to content</a>
+    <main id="main">
+      <slot />
+    </main>
+    <Dock />
+    <script>
+      import { initClientChrome } from '../scripts/client-chrome';
+      initClientChrome();
+    </script>
+  </body>
+</html>
