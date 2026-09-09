@@ -64,11 +64,16 @@ Reads (public):
 - `GET /api/writing` → list (no full body)
 - `GET /api/writing/:slug` → post
 
-## Seed KV from repo
+## Live content source of truth
 
-```bash
-node scripts/seed-kv.mjs
-```
+**KV is live** (Drafts → `POST /api/publish` / `POST /api/delete`). Repo files
+`src/content/signal/posts.json` and `src/content/writing/*.md` are **fixtures /
+optional backups only**.
+
+- Normal `wrangler pages deploy` must **never** write KV from git.
+- `node scripts/seed-kv.mjs` is safe by default (skips existing live keys). Use
+  `SEED_KV_FORCE=1` / `--force` only for disaster recovery (overwrites live).
+- Optional backup live → git: `node scripts/export-kv-to-repo.mjs` then commit.
 
 ## Custom domain
 
