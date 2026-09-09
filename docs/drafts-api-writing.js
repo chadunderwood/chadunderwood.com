@@ -51,7 +51,7 @@ if (!body) {
     body = draft.content || '';
   } catch (e) {}
 }
-title = String(title || '').trim();
+title = String(title || '').replace(/^#+\s*/, '').trim();
 body = String(body || '').trim();
 
 let slug = '';
