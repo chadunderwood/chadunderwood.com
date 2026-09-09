@@ -1,0 +1,64 @@
+---
+import Base from '../layouts/Base.astro';
+import work from '../content/work.json';
+import { getPublishedWriting } from '../lib/writing';
+
+const posts = await getPublishedWriting();
+const latest = posts[0];
+---
+
+<Base
+  title="Work"
+  description="Selected work and projects."
+  latestWritingId={latest?.id ?? null}
+  latestWritingDate={latest ? latest.data.date.toISOString() : null}
+>
+  <div class="page">
+    <h1 class="page-title">Work</h1>
+    <p class="page-dek">Selected projects. Short blurbs — no case-study theater.</p>
+    <ul class="work-list">
+      {work.map((item) => (
+        <li>
+          {item.href ? (
+            <a class="work-item" href={item.href}>
+              <span class="work-title">{item.title}</span>
+              <span class="meta">{item.role} · {item.year}</span>
+              <span class="work-summary">{item.summary}</span>
+            </a>
+          ) : (
+            <div class="work-item">
+              <span class="work-title">{item.title}</span>
+              <span class="meta">{item.role} · {item.year}</span>
+              <span class="work-summary">{item.summary}</span>
+            </div>
+          )}
+        </li>
+      ))}
+    </ul>
+  </div>
+</Base>
+
+<style>
+  .work-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .work-list li + li {
+    border-top: 1px solid var(--hairline);
+  }
+  .work-item {
+    display: grid;
+    gap: 0.3rem;
+    padding: 1.15rem 0;
+    text-decoration: none;
+  }
+  .work-title {
+    font-weight: 550;
+    letter-spacing: -0.015em;
+  }
+  .work-summary {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+</style>

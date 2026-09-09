@@ -1,0 +1,59 @@
+---
+import Base from '../layouts/Base.astro';
+import posts from '../content/signal/posts.json';
+import { getPublishedWriting, formatDate } from '../lib/writing';
+
+const writing = await getPublishedWriting();
+const latest = writing[0];
+const entries = [...posts].sort((a, b) => (a.date < b.date ? 1 : -1));
+---
+
+<Base
+  title="Signal"
+  description="Short posts from Chad — a quiet microblog."
+  latestWritingId={latest?.id ?? null}
+  latestWritingDate={latest ? latest.data.date.toISOString() : null}
+>
+  <div class="page">
+    <h1 class="page-title">Signal</h1>
+    <p class="page-dek">
+      Short posts. Chronological. No likes, no threads — just notes from Chad.
+    </p>
+
+    {entries.length === 0 ? (
+      <p class="empty-state">No signals yet.</p>
+    ) : (
+      <ul class="signal-list">
+        {entries.map((e) => (
+          <li>
+            <p class="signal-body">{e.body}</p>
+            <p class="meta">
+              <time datetime={e.date}>{formatDate(new Date(e.date))}</time>
+            </p>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+</Base>
+
+<style>
+  .signal-list {
+    list-style: none;
+    margin: 1.5rem 0 0;
+    padding: 0;
+  }
+  .signal-list li + li {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--hairline);
+  }
+  .signal-body {
+    margin: 0 0 0.4rem;
+    font-size: 1.05rem;
+    line-height: 1.55;
+    max-width: min(var(--measure), 100%);
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+</style>

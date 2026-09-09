@@ -1,0 +1,57 @@
+---
+import Base from '../layouts/Base.astro';
+import { getPublishedWriting } from '../lib/writing';
+
+const posts = await getPublishedWriting();
+const latest = posts[0];
+
+const placeholders = [
+  { label: 'Placeholder 1', tone: '#2a2a32' },
+  { label: 'Placeholder 2', tone: '#1e2420' },
+  { label: 'Placeholder 3', tone: '#241e1a' },
+];
+---
+
+<Base
+  title="Photos"
+  description="A quiet photo collection."
+  latestWritingId={latest?.id ?? null}
+  latestWritingDate={latest ? latest.data.date.toISOString() : null}
+>
+  <div class="page page-wide">
+    <h1 class="page-title">Photos</h1>
+    <p class="page-dek">Filmstrip placeholders until real assets land.</p>
+    <div class="photo-grid">
+      {placeholders.map((p) => (
+        <figure class="photo-card" style={`background:${p.tone}`}>
+          <figcaption>{p.label}</figcaption>
+        </figure>
+      ))}
+    </div>
+  </div>
+</Base>
+
+<style>
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
+    gap: 0.75rem;
+  }
+  .photo-card {
+    margin: 0;
+    aspect-ratio: 4 / 3;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--hairline);
+    display: grid;
+    place-items: end start;
+    padding: 0.75rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+  @media (max-width: 640px) {
+    .photo-grid {
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.65rem;
+    }
+  }
+</style>

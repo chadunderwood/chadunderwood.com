@@ -1,0 +1,80 @@
+---
+import Base from '../layouts/Base.astro';
+import { getPublishedWriting } from '../lib/writing';
+
+const posts = await getPublishedWriting();
+const latest = posts[0];
+---
+
+<Base
+  title="Colophon"
+  description="How this site is built."
+  latestWritingId={latest?.id ?? null}
+  latestWritingDate={latest ? latest.data.date.toISOString() : null}
+>
+  <div class="page prose">
+    <h1 class="page-title">Colophon</h1>
+    <p class="page-dek">How this room is built. (Dock ⌘ fans to X &amp; GitHub; this page stays at <code>/colophon/</code>.)</p>
+
+    <h2>Stack</h2>
+    <ul>
+      <li><strong>Astro</strong> — static HTML/CSS/JS (`output: 'static'`).</li>
+      <li><strong>Markdown</strong> essays in <code>src/content/writing/</code>.</li>
+      <li><strong>Hostinger Custom HTML</strong> — deploy the <code>dist/</code> folder.</li>
+      <li>No WordPress, no SSR, no page builder.</li>
+    </ul>
+
+    <h2>Publish path</h2>
+    <p>
+      Chad writes in <strong>Drafts</strong>. A publish action POSTs JSON to a webhook that commits
+      Markdown to GitHub; CI builds and uploads <code>dist/</code> to Hostinger. See
+      <code>docs/DEPLOY.md</code> and <code>docs/drafts-publish.js</code>.
+    </p>
+
+    <h2>Inspiration</h2>
+    <p>
+      Interaction model inspired by <a href="https://ped.ro" rel="noopener noreferrer" target="_blank">ped.ro</a>
+      (conversational bio, sparse chrome) — original execution and content, not a clone.
+      Energy also from Benji Taylor’s note that a personal site should feel like leaving the rest of the internet.
+    </p>
+
+    <h2>Type</h2>
+    <p>Inter (Google Fonts) with system-ui fallbacks. Dark tokens from SPEC §5.2; subtle time-of-day shifts via <code>data-period</code>.</p>
+
+    <h2>Sound</h2>
+    <p>Optional UI ticks on hotspot open / dock switch. <strong>Default: off.</strong></p>
+    <label class="sound-toggle">
+      <input type="checkbox" data-sound-toggle />
+      <span>Enable UI sounds</span>
+    </label>
+  </div>
+</Base>
+
+<script>
+  import { isSoundEnabled, setSoundEnabled, playTick } from '../scripts/sound';
+  const box = document.querySelector<HTMLInputElement>('[data-sound-toggle]');
+  if (box) {
+    box.checked = isSoundEnabled();
+    box.addEventListener('change', () => {
+      setSoundEnabled(box.checked);
+      if (box.checked) playTick();
+    });
+  }
+</script>
+
+<style>
+  .sound-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.65rem 0.9rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .sound-toggle input {
+    accent-color: var(--accent-b);
+  }
+</style>
