@@ -26,6 +26,12 @@ function loadPayload() {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
+function annotate(level, message) {
+  // Visible on the Actions UI annotations (often without full log auth)
+  const clean = String(message).replace(/\r?\n/g, ' ').replace(/%/g, '%25');
+  console.error(`::${level}::${clean}`);
+}
+
 const payload = loadPayload();
 const keys = payload && typeof payload === 'object' ? Object.keys(payload) : [];
 const bodyRaw = payload?.body;
@@ -33,32 +39,34 @@ const body = String(bodyRaw ?? '').trim();
 const hasSecretField = payload != null && Object.prototype.hasOwnProperty.call(payload, 'secret');
 const gotSecret = String(payload?.secret ?? '');
 const expectedSecret = process.env.DRAFTS_PUBLISH_SECRET || '';
+const secretMatches = expectedSecret ? gotSecret === expectedSecret : null;
 
-console.error(
-  JSON.stringify({
-    diag: 'signal-publish',
-    keys,
-    hasSecretField,
-    secretNonEmpty: gotSecret.length > 0,
-    expectedSecretConfigured: expectedSecret.length > 0,
-    secretMatches: expectedSecret ? gotSecret === expectedSecret : null,
-    bodyType: bodyRaw === undefined ? 'missing' : typeof bodyRaw,
-    bodyLen: body.length,
-  }),
-);
+const diag = {
+  diag: 'signal-publish',
+  keys,
+  hasSecretField,
+  secretNonEmpty: gotSecret.length > 0,
+  expectedSecretConfigured: expectedSecret.length > 0,
+  secretMatches,
+  bodyType: bodyRaw === undefined ? 'missing' : typeof bodyRaw,
+  bodyLen: body.length,
+};
+annotate('notice', `signal-diag ${JSON.stringify(diag)}`);
 
 if (expectedSecret) {
   if (gotSecret !== expectedSecret) {
-    console.error(
-      'Invalid publish secret — client_payload.secret must equal Actions secret DRAFTS_PUBLISH_SECRET (same as Writing Action).',
+    annotate(
+      'error',
+      `signal-diag secretMatches=false bodyLen=${body.length} keys=${keys.join('|') || '(none)'} — client_payload.secret must equal DRAFTS_PUBLISH_SECRET`,
     );
     process.exit(1);
   }
 }
 
 if (!body) {
-  console.error(
-    'Signal body is empty — HTTP.create must send client_payload.body as the draft text (string).',
+  annotate(
+    'error',
+    `signal-diag secretMatches=${secretMatches} bodyLen=0 keys=${keys.join('|') || '(none)'} — client_payload.body empty/missing`,
   );
   process.exit(1);
 }
