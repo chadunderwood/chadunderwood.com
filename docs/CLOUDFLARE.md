@@ -25,26 +25,26 @@ npx wrangler@latest pages deploy dist --project-name=chadunderwood
 ```bash
 # Interactive (preferred):
 npx wrangler@latest pages secret put PUBLISH_SECRET --project-name=chadunderwood
-
-# Or paste the same value into Drafts scripts:
-#   docs/drafts-api-writing.js
-#   docs/drafts-api-signal.js
-#   docs/drafts-api-delete.js
 ```
 
-Use the **same** secret Chad already uses as `DRAFTS_PUBLISH_SECRET` if desired.
+Drafts (iOS/Mac): create Credential named **`PUBLISH_SECRET`** (password field)
+with the **exact same** value as the Pages secret. Scripts:
+`docs/drafts-api-writing.js`, `docs/drafts-api-signal.js`, `docs/drafts-api-delete.js`
+read that Credential and send both Bearer + `body.secret`.
+
+401 responses are JSON: `{ ok:false, error:"unauthorized", hint:"…" }` (no secret values).
 
 ## API contract
 
 `POST https://chadunderwood.com/api/publish`
 
-- Auth: `Authorization: Bearer <secret>` **or** `body.secret`
+- Auth: `Authorization: Bearer <secret>` **and/or** JSON `body.secret` (both trimmed; either may match)
 - Body:
   ```json
   { "type": "writing"|"signal", "action": "create"|"update"|"delete",
-    "title?:", "slug?:", "body?:", "status?:", "id?:" }
+    "title?:", "slug?:", "body?:", "status?:", "id?:", "secret?:" }
   ```
-- Response: `{ ok, url, id|slug }`
+- Response: `{ ok, url, id|slug }` or `{ ok:false, error, hint? }`
 
 Reads (public):
 
@@ -65,3 +65,14 @@ Pages project custom domain `chadunderwood.com` (and `www` if needed). Zone alre
 ## Git connect (optional later)
 
 Connect GitHub `chadunderwood/chadunderwood.com` in the Pages dashboard for push-to-deploy. Until then, use `wrangler pages deploy dist`.
+
+## Drafts import (edit existing)
+
+Public GETs — paste into Drafts Actions:
+
+| Script | Input | Effect |
+|--------|-------|--------|
+| `docs/drafts-api-import-writing.js` | slug in `draft.meta` / first line / `[[slug]]` | fills draft title+body; meta=slug |
+| `docs/drafts-api-import-signal.js` | id from `/signal/` mono code in meta / first line / `[[id]]` | fills body; meta=id |
+
+Then publish with `action=update` via `drafts-api-writing.js` / `drafts-api-signal.js`, or delete via `drafts-api-delete.js`.
