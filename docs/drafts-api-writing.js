@@ -1,11 +1,30 @@
 // Drafts Action — Publish / update Writing via Cloudflare Pages Function
 // HTTP.create only — alert on success/fail; no context.success / context.fail
 //
-// Set PUBLISH_SECRET to the same value as Cloudflare Pages secret PUBLISH_SECRET
-// (Drafts Credential or paste). Same secret as Signal.
+// Auth: Cloudflare Pages secret name = PUBLISH_SECRET
+// Drafts Credential name = PUBLISH_SECRET (Settings → Credentials → password)
+// API accepts BOTH:
+//   Authorization: Bearer <secret>
+//   JSON body.secret
+// Paste the SAME value in Pages and in the Drafts Credential.
+// Update: set [[action]]=update (or draft tag) so action is "update";
+//   keep slug/id in draft.meta (import scripts set this).
 
 const PUBLISH_URL = 'https://chadunderwood.com/api/publish';
-const PUBLISH_SECRET = 'REPLACE_WITH_PUBLISH_SECRET';
+// Fallback only if Credential missing — leave placeholder; prefer Credential "PUBLISH_SECRET"
+const PUBLISH_SECRET_FALLBACK = 'REPLACE_WITH_PUBLISH_SECRET';
+
+function resolvePublishSecret() {
+  try {
+    const cred = Credential.create('PUBLISH_SECRET', 'Pages publish secret for chadunderwood.com');
+    cred.addPassword('secret', 'PUBLISH_SECRET');
+    if (cred.authorize()) {
+      const v = String(cred.getValue('secret') || '').trim();
+      if (v) return v;
+    }
+  } catch (e) {}
+  return String(PUBLISH_SECRET_FALLBACK || '').trim();
+}
 
 function slugify(title) {
   return (
@@ -47,10 +66,14 @@ try {
   if (tag === 'update' || tag === 'create') action = tag;
 } catch (e) {}
 
+const PUBLISH_SECRET = resolvePublishSecret();
+
 if (!title && action === 'create') {
   alert('Writing publish: title is empty.');
 } else if (!PUBLISH_SECRET || PUBLISH_SECRET.indexOf('REPLACE_') === 0) {
-  alert('Writing publish: set PUBLISH_SECRET (same as Cloudflare PUBLISH_SECRET).');
+  alert(
+    'Writing publish: set Drafts Credential "PUBLISH_SECRET" (same value as Cloudflare Pages secret PUBLISH_SECRET).',
+  );
 } else {
   const requestBody = {
     type: 'writing',
@@ -59,6 +82,7 @@ if (!title && action === 'create') {
     slug: slug,
     body: body,
     status: 'published',
+    secret: PUBLISH_SECRET,
   };
 
   const http = HTTP.create();
@@ -85,7 +109,10 @@ if (!title && action === 'create') {
       'Writing publish failed HTTP ' +
         code +
         '\n' +
-        String((parsed && parsed.error) || response.responseText || response.responseData || '').slice(0, 300),
+        String((parsed && (parsed.error || parsed.hint)) || response.responseText || response.responseData || '').slice(
+          0,
+          400,
+        ),
     );
   }
 }
