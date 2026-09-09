@@ -1,84 +1,64 @@
 # Chad Underwood — Personal site
 
-Dark, ped.ro-inspired interactive bio + macOS-style bottom dock + first-class writing.  
-**Static Astro only** (`output: 'static'`). Deploy `dist/` to **Hostinger Custom HTML**. Not WordPress.
+Dark, ped.ro-inspired interactive bio + macOS-style bottom dock + first-class writing.
 
-`SPEC.md` is the source of truth for product/design.
+**Static Astro** (`output: 'static'`) on **Cloudflare Pages** + Pages Functions (`/api/*`).  
+Canonical docs: [`docs/CLOUDFLARE.md`](docs/CLOUDFLARE.md) · deploy: [`docs/DEPLOY.md`](docs/DEPLOY.md) · Drafts: [`docs/DRAFTS.md`](docs/DRAFTS.md).
+
+`SPEC.md` is the product/design source of truth (hosting sections updated for Cloudflare).
 
 ## Quick start
 
 Requires **Node.js ≥ 22.12**.
 
 ```bash
-cd chad-personal-site
 npm install
 npm run dev          # http://localhost:4321
-npm run build        # → dist/
-npm run preview      # preview production build
+SITE_URL=https://chadunderwood.com npm run build   # → dist/
+npm run preview
 ```
 
-Canonical site URL (build-time). **Leave unset** until Hostinger staging hostname exists — otherwise absolute canonical/OG/RSS/sitemap stay relative or localhost and do not bake `chadunderwood.com` early.
+Omit `SITE_URL` for local builds if you do not want absolute canonical/OG/RSS/sitemap URLs yet.
+
+## Deploy
 
 ```bash
-npm run build                                          # no SITE_URL yet (local / pre-staging)
-SITE_URL=https://YOUR-STAGING-HOST npm run build       # Hostinger free subdomain
-SITE_URL=https://chadunderwood.com npm run build       # production cutover later
+export CLOUDFLARE_API_TOKEN=…    # never commit
+export CLOUDFLARE_ACCOUNT_ID=…  # never commit
+npx wrangler@latest pages deploy dist --project-name=chadunderwood
 ```
+
+Details: **`docs/DEPLOY.md`**.
 
 ## Routes
 
 | Path | Notes |
 |------|--------|
-| `/` | Interactive bio (≥10 hotspots, discovery counter, secret word) |
-| `/writing`, `/writing/[slug]` | Essay index + Markdown posts |
+| `/` | Interactive bio |
+| `/writing`, `/writing/[slug]` | Essay index + posts (static + KV-backed live essays) |
 | `/rss.xml` | Writing RSS |
 | `/work` | Selected work |
-| `/photos` | Placeholders OK |
+| `/photos` | Photos |
 | `/now` | Now page |
-| `/signal` | Short posts / microblog (Chad) |
+| `/signal` | Short posts / microblog (KV; ids `YYYYMMDDHHMMSS`) |
 | `/guestbook` | 301 → `/signal/` |
-| `/colophon` | Stack, credits, sound toggle (default off) |
-| `/secret` | Soft-gated (localStorage unlock from bio), `noindex`, out of sitemap |
-| `/sitemap-index.xml` | Via `@astrojs/sitemap` (excludes secret) |
+| `/colophon` | Stack / credits |
+| `/secret` | Soft-gated, `noindex` |
+| `/api/publish` | Authenticated create/update (Writing / Signal) |
+| `/api/delete` | Authenticated safe delete (`confirm` required) |
+| `/api/signal`, `/api/writing`, `/api/writing/:slug` | Public reads |
 
 ## Content
 
 - Bio hotspots: `src/content/bio.json`
-- Essays: `src/content/writing/*.md` (frontmatter: `title`, `date`, `updated`, `edition`, `summary`, `example`)
+- Essays: `src/content/writing/*.md` (+ KV for live publishes)
+- Signal seed: `src/content/signal/posts.json`
 - Now: `src/content/now.md`
-- Work: `src/content/work.json`
-- Social / Elsewhere: `src/content/social.json`
-- Guestbook approved: `src/content/guestbook/approved.json`
-- Site meta / email placeholder: `src/content/site.json`
+- Work / social / site: `src/content/work.json`, `social.json`, `site.json`
 
-## Drafts → publish → Hostinger
+## Drafts
 
-1. Configure webhook + shared secret (see `docs/drafts-publish.js`).
-2. Drafts Action POSTs essay JSON → commits Markdown to GitHub.
-3. CI builds static site → deploys `dist/` to Hostinger.
-
-Full steps: **`docs/DEPLOY.md`**.
-
-## Features (SPEC §6)
-
-- Discovery counter + visited styles (`localStorage`)
-- Secret unmarked hotspot → `/secret`
-- Dock on all pages with custom SVG icons
-- Writing badge (unseen latest) + reading-progress glow on essays
-- Elsewhere stack, time-of-day `data-period`, optional UI sound (default off)
-- Essay editions labeling
-- Keyboard accessible dock / hotspots / panels / elsewhere
-- `prefers-reduced-motion` respected; page bottom padding for dock
-
-## Placeholders to replace
-
-- Email in `src/content/site.json`
-- Social URLs in `src/content/social.json`
-- Final bio copy in `src/content/bio.json`
-- Sample essays marked `example: true` (or delete)
-- Guestbook form `action` endpoint
-- Photo assets on `/photos`
-- Work case blurbs
+Paste `docs/drafts-api-*.js` into Drafts Actions. Credential **`PUBLISH_SECRET`** must match the Pages secret. See **`docs/DRAFTS.md`**.
 
 ## License
 

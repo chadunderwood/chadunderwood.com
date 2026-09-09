@@ -2,8 +2,6 @@
 
 Production target: **Cloudflare Pages** (`chadunderwood`) + **Pages Functions** on `https://chadunderwood.com/api/*`.
 
-Hostinger remains on disk but is unused after DNS cutover.
-
 ## Build / deploy
 
 ```bash
@@ -89,3 +87,5 @@ Public GETs — paste into Drafts Actions:
 | `docs/drafts-api-import.js` | paste slug or YYYYMMDDHHMMSS (14 digits → Signal; else Writing) | fills body; meta set |
 
 Then publish with `action=update` via `drafts-api-writing.js` / `drafts-api-signal.js`, or **safe-delete** via `drafts-api-delete.js` (paste key → infer type → `DELETE <key>` → `/api/delete`).
+
+Drafts Action setup: [DRAFTS.md](./DRAFTS.md).
