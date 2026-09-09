@@ -1,0 +1,108 @@
+name: Drafts publish
+
+on:
+  repository_dispatch:
+    types: [drafts-publish]
+  workflow_dispatch:
+    inputs:
+      title:
+        description: Essay title
+        required: true
+        type: string
+      slug:
+        description: Optional slug (slugified from title if empty)
+        required: false
+        type: string
+      body:
+        description: Markdown body
+        required: true
+        type: string
+      status:
+        description: published or draft
+        required: false
+        default: published
+        type: string
+      tags:
+        description: Comma-separated tags
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: drafts-publish
+  cancel-in-progress: false
+
+jobs:
+  write-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build payload from dispatch / inputs
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          CLIENT_PAYLOAD: ${{ toJson(github.event.client_payload) }}
+          INPUT_TITLE: ${{ inputs.title }}
+          INPUT_SLUG: ${{ inputs.slug }}
+          INPUT_BODY: ${{ inputs.body }}
+          INPUT_STATUS: ${{ inputs.status }}
+          INPUT_TAGS: ${{ inputs.tags }}
+          DRAFTS_PUBLISH_SECRET: ${{ secrets.DRAFTS_PUBLISH_SECRET }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          let payload;
+          if (process.env.EVENT_NAME === 'repository_dispatch') {
+            payload = JSON.parse(process.env.CLIENT_PAYLOAD || '{}');
+          } else {
+            const tags = (process.env.INPUT_TAGS || '')
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean);
+            payload = {
+              secret: process.env.DRAFTS_PUBLISH_SECRET || '',
+              title: process.env.INPUT_TITLE,
+              slug: process.env.INPUT_SLUG || undefined,
+              body: process.env.INPUT_BODY,
+              status: process.env.INPUT_STATUS || 'published',
+              tags,
+              updated: true,
+            };
+          }
+          fs.writeFileSync('drafts-payload.json', JSON.stringify(payload));
+          NODE
+
+      - name: Apply markdown to writing collection
+        id: apply
+        env:
+          DRAFTS_PUBLISH_SECRET: ${{ secrets.DRAFTS_PUBLISH_SECRET }}
+          SITE_URL: https://chadunderwood.com
+        run: |
+          set -euo pipefail
+          OUT=$(DRAFTS_PAYLOAD="$(cat drafts-payload.json)" node scripts/apply-drafts-publish.mjs)
+          echo "$OUT"
+          URL=$(echo "$OUT" | head -1)
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Commit writing file
+        run: |
+          set -euo pipefail
+          git config user.name "drafts-publish[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/content/writing/
+          if git diff --staged --quiet; then
+            echo "No content changes"
+            exit 0
+          fi
+          git commit -m "content(writing): publish via Drafts"
+          git push origin HEAD:main
