@@ -1,31 +1,16 @@
 ---
 import Base from '../layouts/Base.astro';
-import posts from '../content/signal/posts.json';
-import { getPublishedWriting, formatDate } from '../lib/writing';
-import { marked } from 'marked';
+import { getPublishedWriting } from '../lib/writing';
 
 const writing = await getPublishedWriting();
 const latest = writing[0];
-const entries = [...posts].sort((a, b) => (a.date < b.date ? 1 : -1));
 
+// Live Signal content lives in KV (/api/signal). Do NOT SSR from git posts.json —
+// that fixture is seed/backup only and must never clobber Drafts publishes on deploy.
 const PAGE_SIZE = 10;
-const requestedPage = Math.max(1, parseInt(Astro.url.searchParams.get('page') || '1', 10) || 1);
-const totalPages = Math.max(1, Math.ceil(entries.length / PAGE_SIZE) || 1);
-const page = Math.min(requestedPage, totalPages);
-const pageSlice = entries.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-async function renderBody(body: string): Promise<string> {
-  return await marked.parse(String(body || ''), { breaks: true, gfm: true });
-}
-
-const ssrEntries = await Promise.all(
-  pageSlice.map(async (e) => ({
-    id: e.id,
-    date: e.date,
-    dateLabel: formatDate(new Date(e.date)),
-    html: await renderBody(e.body),
-  })),
-);
+const page = Math.max(1, parseInt(Astro.url.searchParams.get('page') || '1', 10) || 1);
+const ssrEntries: { id: string; date: string; dateLabel: string; html: string }[] = [];
+const totalPages = 1;
 
 function pageHref(n: number): string {
   if (n <= 1) return '/signal/';
@@ -51,8 +36,9 @@ function pageHref(n: number): string {
       data-page-size={String(PAGE_SIZE)}
       data-page={String(page)}
     >
+      {/* Client fills from /api/signal (KV). Git posts.json is never the live source. */}
       {ssrEntries.length === 0 ? (
-        <p class="empty-state" id="signal-empty">No signals yet.</p>
+        <p class="empty-state" id="signal-empty">Loading signals…</p>
       ) : (
         <>
           <ul class="signal-list" id="signal-list">
