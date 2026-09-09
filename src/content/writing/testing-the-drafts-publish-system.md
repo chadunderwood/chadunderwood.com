@@ -2,7 +2,7 @@
 title: "Testing the drafts publish system"
 date: 2026-09-09
 updated: 2026-09-09
-edition: 3
+edition: 4
 draft: false
 tags: []
 ---
