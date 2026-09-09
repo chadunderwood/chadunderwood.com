@@ -27,12 +27,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: Build payload from dispatch / inputs
         env:
           EVENT_NAME: ${{ github.event_name }}
           CLIENT_PAYLOAD: ${{ toJson(github.event.client_payload) }}
           INPUT_BODY: ${{ inputs.body }}
           INPUT_ID: ${{ inputs.id }}
+          DRAFTS_PUBLISH_SECRET: ${{ secrets.DRAFTS_PUBLISH_SECRET }}
         run: |
           node <<'NODE'
           const fs = require('fs');
@@ -41,31 +46,33 @@ jobs:
             payload = JSON.parse(process.env.CLIENT_PAYLOAD || '{}');
           } else {
             payload = {
+              secret: process.env.DRAFTS_PUBLISH_SECRET || '',
               body: process.env.INPUT_BODY,
               id: process.env.INPUT_ID || undefined,
             };
           }
           if (payload && payload.data && typeof payload.data === 'object' && !payload.body) {
-            payload = { ...payload, ...payload.data };
+            payload = Object.assign({}, payload, payload.data);
           }
           fs.writeFileSync('drafts-payload.json', JSON.stringify(payload));
           const keys = Object.keys(payload || {});
           const bodyLen = String(payload.body || '').trim().length;
-          const msg = `signal-payload keys=${keys.join('|') || '(none)'} bodyLen=${bodyLen} secretIgnored=true`;
-          console.log(msg);
-          console.log(`::notice::${msg}`);
+          console.log('payload keys:', keys.join(', '));
+          console.log('body length:', bodyLen);
+          console.log('::notice::signal-payload keys=' + (keys.join('|') || '(none)') + ' bodyLen=' + bodyLen);
           NODE
 
       - name: Apply signal post
         id: apply
         env:
+          DRAFTS_PUBLISH_SECRET: ${{ secrets.DRAFTS_PUBLISH_SECRET }}
           SITE_URL: https://chadunderwood.com
         run: |
           set -euo pipefail
-          export DRAFTS_PAYLOAD
-          DRAFTS_PAYLOAD="$(cat drafts-payload.json)"
-          node scripts/apply-signal-publish.mjs | tee apply-out.txt
-          URL="$(grep -E '^https://' apply-out.txt | head -1)"
+          OUT="$(node scripts/apply-signal-publish.mjs drafts-payload.json)"
+          echo "$OUT"
+          URL="$(printf '%s\n' "$OUT" | grep -E '^https://' | head -1)"
+          test -n "$URL"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Published URL: $URL"
 
