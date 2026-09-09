@@ -55,6 +55,9 @@ jobs:
           console.log('payload keys:', keys.join(', ') || '(none)');
           console.log('body length:', String(payload.body || '').length);
           console.log('has secret field:', Object.prototype.hasOwnProperty.call(payload || {}, 'secret'));
+          const bodyLen = String(payload.body || '').trim().length;
+          const hasSecret = Object.prototype.hasOwnProperty.call(payload || {}, 'secret');
+          console.log(`::notice::signal-payload keys=${keys.join('|') || '(none)'} bodyLen=${bodyLen} hasSecretField=${hasSecret}`);
           NODE
 
       - name: Apply signal post
@@ -64,10 +67,11 @@ jobs:
           SITE_URL: https://chadunderwood.com
         run: |
           set -euo pipefail
-          OUT=$(DRAFTS_PAYLOAD="$(cat drafts-payload.json)" node scripts/apply-signal-publish.mjs)
-          echo "$OUT"
-          URL=$(echo "$OUT" | head -1)
+          export DRAFTS_PAYLOAD="$(cat drafts-payload.json)"
+          node scripts/apply-signal-publish.mjs | tee apply-out.txt
+          URL="$(head -1 apply-out.txt)"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Published URL: $URL"
 
       - name: Commit signal posts
         run: |
