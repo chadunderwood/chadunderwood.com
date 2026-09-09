@@ -4,6 +4,9 @@
  * or from a file path arg, writes/updates src/content/writing/<slug>.md
  * Prints the public URL to stdout.
  * Zero npm deps (so GitHub Actions can run without npm ci).
+ *
+ * Auth: repository_dispatch already requires a GitHub PAT.
+ * client_payload.secret is ignored if present.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -78,21 +81,13 @@ function yamlDumpFrontmatter(data) {
 }
 
 const payload = loadPayload();
-const expectedSecret = process.env.DRAFTS_PUBLISH_SECRET || '';
-if (expectedSecret) {
-  const got = payload.secret || '';
-  if (got !== expectedSecret) {
-    console.error('Invalid publish secret');
-    process.exit(1);
-  }
-}
+// Auth is repository_dispatch PAT; client_payload.secret ignored if present.
 
 let title = String(payload.title || '').trim() || 'Untitled';
-// Drafts often sends "# Title" as the title line — strip leading markdown heading markers
+// Drafts often sends "# Title" — strip leading markdown heading markers
 title = title.replace(/^#+\s+/, '').trim() || 'Untitled';
 const slug = slugify(payload.slug || title);
 let body = String(payload.body || '').trim();
-// If body empty but title was a full draft, keep empty; if body starts with same heading, strip it
 if (body.startsWith('#')) {
   body = body.replace(/^#+\s+[^\n]+\n+/, '').trim();
 }
