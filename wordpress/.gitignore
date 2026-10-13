@@ -1,0 +1,7 @@
+.DS_Store
+*.zip
+wp-config.php
+.env*
+*.sql
+node_modules/
+*.log
