@@ -14,6 +14,7 @@ define( 'CHAD_PERSONAL_DIR', get_template_directory() );
 define( 'CHAD_PERSONAL_URI', get_template_directory_uri() );
 
 require_once CHAD_PERSONAL_DIR . '/inc/seo.php';
+require_once CHAD_PERSONAL_DIR . '/inc/schema.php';
 
 /**
  * Theme supports.
