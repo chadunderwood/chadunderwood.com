@@ -13,6 +13,8 @@ define( 'CHAD_PERSONAL_VERSION', '1.0.0' );
 define( 'CHAD_PERSONAL_DIR', get_template_directory() );
 define( 'CHAD_PERSONAL_URI', get_template_directory_uri() );
 
+require_once CHAD_PERSONAL_DIR . '/inc/seo.php';
+
 /**
  * Theme supports.
  */
