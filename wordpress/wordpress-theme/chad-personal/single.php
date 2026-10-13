@@ -22,6 +22,9 @@ get_header();
 			<div class="essay-body">
 				<?php the_content(); ?>
 			</div>
+			<footer class="essay-footer">
+				<p><a class="essay-back" href="<?php echo esc_url( home_url( '/essays/' ) ); ?>"><?php esc_html_e( '← All essays', 'chad-personal' ); ?></a></p>
+			</footer>
 		</article>
 	<?php endwhile; ?>
 </main>

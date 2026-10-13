@@ -127,6 +127,18 @@ function chad_personal_essays_rewrite() {
 add_action( 'init', 'chad_personal_essays_rewrite' );
 
 /**
+ * Self-heal: flush once if the /essays/ archive rule is missing from the
+ * stored rewrite rules (e.g. theme files updated without re-activation).
+ */
+function chad_personal_maybe_flush_essays_rules() {
+	$rules = get_option( 'rewrite_rules' );
+	if ( is_array( $rules ) && ! isset( $rules['^essays/?$'] ) ) {
+		flush_rewrite_rules( false );
+	}
+}
+add_action( 'init', 'chad_personal_maybe_flush_essays_rules', 99 );
+
+/**
  * Force post permalinks to /essays/%postname%/ even if WP setting differs.
  */
 function chad_personal_post_link( $permalink, $post ) {
