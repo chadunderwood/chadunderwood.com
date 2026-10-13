@@ -170,3 +170,18 @@ function chad_personal_seo_head() {
 	printf( '<meta name="twitter:image" content="%s">' . "\n", esc_url( $d['image']['url'] ) );
 }
 add_action( 'wp_head', 'chad_personal_seo_head', 5 );
+
+/**
+ * Document title for the /essays/ archive (core would otherwise use the
+ * first post's title, since there is no page_for_posts page).
+ *
+ * @param array $parts Title parts.
+ * @return array
+ */
+function chad_personal_essays_title_parts( $parts ) {
+	if ( chad_personal_is_essays_archive() ) {
+		$parts['title'] = __( 'Essays', 'chad-personal' );
+	}
+	return $parts;
+}
+add_filter( 'document_title_parts', 'chad_personal_essays_title_parts' );
