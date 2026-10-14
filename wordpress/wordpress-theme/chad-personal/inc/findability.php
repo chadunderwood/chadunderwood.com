@@ -33,3 +33,58 @@ function chad_personal_rel_me_head() {
 	}
 }
 add_action( 'wp_head', 'chad_personal_rel_me_head', 7 );
+
+/* ---- 2. RSS feed discovery ---- */
+
+/**
+ * Replace core feed links (which add "» Feed" titles and comment feeds)
+ * with exactly one site feed link on every page.
+ */
+function chad_personal_feed_links_setup() {
+	remove_action( 'wp_head', 'feed_links', 2 );
+	remove_action( 'wp_head', 'feed_links_extra', 3 );
+}
+add_action( 'after_setup_theme', 'chad_personal_feed_links_setup', 20 );
+
+function chad_personal_feed_link_head() {
+	printf(
+		"<link rel=\"alternate\" type=\"application/rss+xml\" title=\"%s\" href=\"%s\" />\n",
+		esc_attr( get_bloginfo( 'name' ) ),
+		esc_url( get_feed_link() )
+	);
+}
+add_action( 'wp_head', 'chad_personal_feed_link_head', 2 );
+
+/**
+ * /essays/feed/ → 301 to /feed/ (the site feed is the essays feed).
+ */
+function chad_personal_essays_feed_rewrite() {
+	add_rewrite_rule( '^essays/feed/?$', 'index.php?chad_essays_feed=1', 'top' );
+	add_rewrite_rule( '^essays/feed/(rss2|rss|atom|rdf)/?$', 'index.php?chad_essays_feed=1', 'top' );
+}
+add_action( 'init', 'chad_personal_essays_feed_rewrite' );
+
+function chad_personal_essays_feed_query_var( $vars ) {
+	$vars[] = 'chad_essays_feed';
+	return $vars;
+}
+add_filter( 'query_vars', 'chad_personal_essays_feed_query_var' );
+
+function chad_personal_essays_feed_redirect() {
+	if ( get_query_var( 'chad_essays_feed' ) ) {
+		wp_safe_redirect( get_feed_link(), 301 );
+		exit;
+	}
+}
+add_action( 'template_redirect', 'chad_personal_essays_feed_redirect', 1 );
+
+/**
+ * Self-heal: flush once if the essays feed rule is missing.
+ */
+function chad_personal_maybe_flush_feed_rules() {
+	$rules = get_option( 'rewrite_rules' );
+	if ( is_array( $rules ) && ! isset( $rules['^essays/feed/?$'] ) ) {
+		flush_rewrite_rules( false );
+	}
+}
+add_action( 'init', 'chad_personal_maybe_flush_feed_rules', 99 );
