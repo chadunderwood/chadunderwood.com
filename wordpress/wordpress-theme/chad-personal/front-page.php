@@ -33,6 +33,8 @@ $lead_html = chad_personal_build_lead_html( $lead, $words );
 
 		<p class="bio-lead"><?php echo $lead_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped — built with esc_html + safe markup ?></p>
 
+		<p class="bio-also"><?php esc_html_e( 'Also writing:', 'chad-personal' ); ?> <a href="<?php echo esc_url( chad_personal_dock_urls()['pprpros'] ); ?>" rel="me noopener">PPR Pros</a></p>
+
 		<div class="bio-panels">
 			<?php foreach ( $words as $w ) : ?>
 				<?php

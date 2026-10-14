@@ -15,6 +15,7 @@ define( 'CHAD_PERSONAL_URI', get_template_directory_uri() );
 
 require_once CHAD_PERSONAL_DIR . '/inc/seo.php';
 require_once CHAD_PERSONAL_DIR . '/inc/schema.php';
+require_once CHAD_PERSONAL_DIR . '/inc/findability.php';
 
 /**
  * Theme supports.
@@ -228,6 +229,7 @@ function chad_personal_dock_urls() {
 		'email'  => 'mailto:' . $email,
 		'x'      => 'https://x.com/chadunderwood',
 		'github' => 'https://github.com/chadunderwood',
+		'pprpros' => 'https://pprpros.substack.com',
 	);
 }
 

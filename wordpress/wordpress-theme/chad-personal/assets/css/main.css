@@ -708,3 +708,7 @@ html[data-theme='light'] .dock-item.active {
     height: 24px;
   }
 }
+
+/* Also writing: PPR Pros */
+.bio-also { margin-top: 1.25rem; font-size: 0.95em; opacity: 0.75; }
+.bio-also a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }

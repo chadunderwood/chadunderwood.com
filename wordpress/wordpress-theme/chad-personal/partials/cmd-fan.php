@@ -20,7 +20,7 @@ $gh_icon = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" 
 		class="elsewhere-link elsewhere-link--icon"
 		href="<?php echo esc_url( $urls['x'] ); ?>"
 		target="_blank"
-		rel="noopener noreferrer"
+		rel="me noopener noreferrer"
 	>
 		<span class="elsewhere-icon" aria-hidden="true"><?php echo $x_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
 		<span>X</span>
@@ -30,7 +30,7 @@ $gh_icon = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" 
 		class="elsewhere-link elsewhere-link--icon"
 		href="<?php echo esc_url( $urls['github'] ); ?>"
 		target="_blank"
-		rel="noopener noreferrer"
+		rel="me noopener noreferrer"
 	>
 		<span class="elsewhere-icon" aria-hidden="true"><?php echo $gh_icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
 		<span>GitHub</span>
