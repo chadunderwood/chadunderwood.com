@@ -125,3 +125,13 @@ function chad_personal_staging_sitemaps( $enabled ) {
 	return chad_personal_is_staging() ? false : $enabled;
 }
 add_filter( 'wp_sitemaps_enabled', 'chad_personal_staging_sitemaps' );
+
+/* ---- 5. Sitemap hygiene: posts and pages only ---- */
+
+/**
+ * Drop taxonomy sitemaps (1-URL category sitemap, ~110 thin single-use tags).
+ */
+function chad_personal_sitemap_taxonomies( $taxonomies ) {
+	return array();
+}
+add_filter( 'wp_sitemaps_taxonomies', 'chad_personal_sitemap_taxonomies' );
