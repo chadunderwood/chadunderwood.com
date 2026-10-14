@@ -88,3 +88,40 @@ function chad_personal_maybe_flush_feed_rules() {
 	}
 }
 add_action( 'init', 'chad_personal_maybe_flush_feed_rules', 99 );
+
+/* ---- 4. Staging guard (host/env gated; apex unaffected) ---- */
+
+/**
+ * True on any non-production host: staging.* subdomains, or a
+ * WP_ENVIRONMENT_TYPE of staging/development/local.
+ *
+ * @return bool
+ */
+function chad_personal_is_staging() {
+	$host = strtolower( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) );
+	$is   = ( 0 === strpos( $host, 'staging.' ) ) || in_array( wp_get_environment_type(), array( 'staging', 'development', 'local' ), true );
+	return (bool) apply_filters( 'chad_personal_is_staging', $is );
+}
+
+function chad_personal_staging_header() {
+	if ( chad_personal_is_staging() && ! headers_sent() ) {
+		header( 'X-Robots-Tag: noindex, nofollow', true );
+	}
+}
+add_action( 'send_headers', 'chad_personal_staging_header' );
+
+function chad_personal_staging_robots_meta( $robots ) {
+	if ( ! chad_personal_is_staging() ) {
+		return $robots;
+	}
+	unset( $robots['max-image-preview'], $robots['index'], $robots['follow'] );
+	$robots['noindex']  = true;
+	$robots['nofollow'] = true;
+	return $robots;
+}
+add_filter( 'wp_robots', 'chad_personal_staging_robots_meta', 99 );
+
+function chad_personal_staging_sitemaps( $enabled ) {
+	return chad_personal_is_staging() ? false : $enabled;
+}
+add_filter( 'wp_sitemaps_enabled', 'chad_personal_staging_sitemaps' );
